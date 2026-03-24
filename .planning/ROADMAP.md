@@ -60,7 +60,7 @@ Every line of feature code written in Phase 2 and 3 depends on a working Drizzle
 ## Phase 2: Core Loop
 
 **Requirements:** MSG-01, MSG-02, MSG-03, MSG-04, MSG-05, PERS-01, PERS-02, PERS-03, PERS-04, RELY-01, RELY-02, RELY-03
-**Status:** In Progress — Plans 02-01 (db-query-layer), 02-02 (route-handler), and 02-03 (chat-components) complete
+**Status:** In Progress — Plans 02-01 (db-query-layer), 02-02 (route-handler), 02-03 (chat-components), and 02-04 (chat-page) complete — all implementation plans done; pending human UAT (db:migrate + npm run dev)
 
 ### Rationale
 
@@ -159,3 +159,5 @@ With a proven streaming and persistence core, the UI shell can be built on a sta
 *Requirements validated: 21 / 21 mapped*
 *Plan 02-01 (db-query-layer) completed: 2026-03-24 — queries.ts with all 7 CRUD functions*
 *Plan 02-02 (route-handler) completed: 2026-03-24 — streaming POST handler with chatId validation, user msg persistence, convertToModelMessages, maxRetries: 2, onFinish assistant persistence with try/catch*
+*Plan 02-03 (chat-components) completed: 2026-03-24 — ChatInterface, MessageList, MessageInput created*
+*Plan 02-04 (chat-page) completed: 2026-03-24 — chat/[chatId]/page.tsx Server Component + root page Server Action (commit abf6d39)*
