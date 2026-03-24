@@ -1,3 +1,16 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+last_updated: "2026-03-24T15:02:12.739Z"
+progress:
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+---
+
 # Project State: Streaming Chatbot
 
 **Last updated:** 2026-03-24 — Plan 02 (drizzle-schema-and-client) complete (migration pending human action)
@@ -52,12 +65,14 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 A phase is complete when all of its success criteria (defined in ROADMAP.md) are observable in the running application — not when implementation tasks are checked off.
 
 **Phase 1 gates:**
+
 - `npm run dev` starts cleanly with only env vars set — PENDING .env.local
 - `drizzle-kit migrate` creates the correct schema on a fresh DB — PENDING human action (see checkpoint)
 - A Server Component query executes without error — PENDING .env.local + db:migrate
 - No hardcoded credentials anywhere in source — ✅ PASSED (SC4 verified)
 
 **Phase 2 gates:**
+
 - First streaming token arrives before full response completes (`Transfer-Encoding: chunked` visible in DevTools)
 - Full page reload after a conversation restores all messages from Postgres
 - Loading indicator tracks the assistant response lifecycle precisely
@@ -65,6 +80,7 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 - Exhausted retries produce a visible error in the chat UI
 
 **Phase 3 gates:**
+
 - Sidebar lists all conversations; clicking any one loads its history
 - New Chat creates and navigates to a fresh conversation; sidebar updates immediately
 - Rename persists after a full page reload

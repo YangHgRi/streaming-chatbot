@@ -1,31 +1,31 @@
 ---
-status: partial
+status: passed
 phase: 01-foundation
 source: [01-VERIFICATION.md]
 started: 2026-03-24T14:34:39Z
-updated: 2026-03-24T14:34:39Z
+updated: 2026-03-24T15:01:45Z
 ---
 
 ## Current Test
 
-[awaiting human testing]
+approved by developer 2026-03-24
 
 ## Tests
 
 ### 1. Apply Drizzle migration to Postgres (SC2 / INFRA-03)
 expected: `npm run db:migrate` exits 0; `chats`, `messages`, and `__drizzle_migrations` tables exist in the database; `messages_chat_id_idx` index is present; FK constraint `messages.chat_id → chats.id ON DELETE cascade` is present
-result: [pending]
+result: passed
 
 ### 2. Dev server starts and DB smoke test passes (SC1 + SC3 / INFRA-04)
 expected: `npm run dev` starts without error; visiting http://localhost:3000 shows "DB connection: OK" and "Chats in database: 0" (or a count); no unhandled exception in the terminal
-result: [pending]
+result: passed
 
 ## Summary
 
 total: 2
-passed: 0
+passed: 2
 issues: 0
-pending: 2
+pending: 0
 skipped: 0
 blocked: 0
 
