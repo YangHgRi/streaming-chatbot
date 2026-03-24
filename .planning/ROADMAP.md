@@ -24,7 +24,7 @@ All 21 v1 requirements assigned before phases are defined.
 ## Phase 1: Foundation
 
 **Requirements:** INFRA-01, INFRA-02, INFRA-03, INFRA-04
-**Status:** Not started
+**Status:** In Progress (Plan 01 complete — scaffold + packages; Plan 02 next — schema + migrations)
 
 ### Rationale
 
@@ -154,4 +154,5 @@ With a proven streaming and persistence core, the UI shell can be built on a sta
 ---
 
 *Roadmap created: 2025-07-14*
+*Plan 01 (scaffold-and-packages) completed: 2026-03-24*
 *Requirements validated: 21 / 21 mapped*

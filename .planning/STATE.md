@@ -1,13 +1,13 @@
 # Project State: Streaming Chatbot
 
-**Last updated:** 2025-07-14
+**Last updated:** 2026-03-24
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 1 — Foundation**
+**Phase 1 — Foundation** (Plan 01 complete, Plan 02 next)
 
 Establishing the project scaffold, pinned package versions, Drizzle schema, database migrations, and environment variable wiring. No feature code is written until this phase is complete and verified.
 
@@ -15,7 +15,7 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 | Foundation | INFRA-01–04 | **Current** |
+| 1 | Foundation | INFRA-01–04 | **In Progress** (1/2 plans done) |
 | 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | Not started |
 | 3 | Conversations UI | CONV-01–05 | Not started |
 
@@ -23,10 +23,10 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 
 | ID | Phase | Status |
 |----|-------|--------|
-| INFRA-01 | 1 | Pending |
+| INFRA-01 | 1 | Complete (01-01) |
 | INFRA-02 | 1 | Pending |
 | INFRA-03 | 1 | Pending |
-| INFRA-04 | 1 | Pending |
+| INFRA-04 | 1 | Complete (01-01) |
 | MSG-01 | 2 | Pending |
 | MSG-02 | 2 | Pending |
 | MSG-03 | 2 | Pending |
@@ -45,7 +45,7 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 | CONV-04 | 3 | Pending |
 | CONV-05 | 3 | Pending |
 
-**Coverage: 21 / 21 v1 requirements assigned. 0 complete.**
+**Coverage: 21 / 21 v1 requirements assigned. 2 complete (INFRA-01, INFRA-04).**
 
 ## Phase Completion Gates
 
@@ -77,6 +77,9 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 |------|----------|-----------|
 | 2025-07-14 | 3-phase structure (Foundation / Core Loop / Conversations UI) | Requirements group naturally into infra setup, the streaming+persistence loop, and the conversation-management UI shell. Adding a 4th polish phase would split v1 requirements across 4 phases without a clear dependency boundary. |
 | 2025-07-14 | MSG, PERS, and RELY bundled in Phase 2 | These three groups cannot be independently verified — streaming without persistence is untestable and persistence without streaming is incomplete. Treating them as one cohesive unit reduces integration risk. |
+| 2026-03-24 | create-next-app scaffolds into scaffold-tmp/ then moved to root | CLI refuses to scaffold into existing dirs with non-standard files (.planning/). Workaround: scaffold then copy. All .git/ and .planning/ preserved. |
+| 2026-03-24 | Tailwind v4 installed (no tailwind.config.ts) | create-next-app@16.2.1 installs Tailwind v4 which uses @tailwindcss/postcss + postcss.config.mjs. No tailwind.config.ts file — this is correct v4 behavior. |
+| 2026-03-24 | All runtime deps pinned without ^ | npm adds ^ by default. Manually edited package.json to remove ^ from all critical packages post-install. |
 
 ## Notes
 
@@ -85,3 +88,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
+*Last updated: 2026-03-24 — Plan 01 (scaffold-and-packages) complete*
