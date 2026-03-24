@@ -60,7 +60,7 @@ Every line of feature code written in Phase 2 and 3 depends on a working Drizzle
 ## Phase 2: Core Loop
 
 **Requirements:** MSG-01, MSG-02, MSG-03, MSG-04, MSG-05, PERS-01, PERS-02, PERS-03, PERS-04, RELY-01, RELY-02, RELY-03
-**Status:** Not started
+**Status:** In Progress — Plan 02-01 (db-query-layer) complete
 
 ### Rationale
 
@@ -157,3 +157,4 @@ With a proven streaming and persistence core, the UI shell can be built on a sta
 *Plan 01 (scaffold-and-packages) completed: 2026-03-24*
 *Plan 02 (drizzle-schema-and-client) completed: 2026-03-24 — db:migrate pending human action*
 *Requirements validated: 21 / 21 mapped*
+*Plan 02-01 (db-query-layer) completed: 2026-03-24 — queries.ts with all 7 CRUD functions*

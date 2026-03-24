@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-24T15:02:12.739Z"
+status: Executing Phase 02
+last_updated: "2026-03-24T17:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
@@ -13,23 +13,23 @@ progress:
 
 # Project State: Streaming Chatbot
 
-**Last updated:** 2026-03-24 — Plan 02 (drizzle-schema-and-client) complete (migration pending human action)
+**Last updated:** 2026-03-24 — Plan 02-01 (db-query-layer) complete; queries.ts with all 7 CRUD functions
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 1 — Foundation** (Plan 01 complete, Plan 02 complete — migration pending human action)
+**Phase 2 — Core Loop** (Plan 02-01 complete)
 
-Establishing the project scaffold, pinned package versions, Drizzle schema, database migrations, and environment variable wiring. No feature code is written until this phase is complete and verified.
+Building the full streaming request/response loop: LLM integration, persistence, retry, and base UI components. Plan 02-01 (DB query layer) complete.
 
 ## Phase Summary
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 | Foundation | INFRA-01–04 | **In Progress** (2/2 plans done — SC2/SC3 pending .env.local + db:migrate) |
-| 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | Not started |
+| 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | **In Progress** (02-01 complete) |
 | 3 | Conversations UI | CONV-01–05 | Not started |
 
 ## Requirement Status
@@ -45,10 +45,10 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 | MSG-03 | 2 | Pending |
 | MSG-04 | 2 | Pending |
 | MSG-05 | 2 | Pending |
-| PERS-01 | 2 | Pending |
-| PERS-02 | 2 | Pending |
-| PERS-03 | 2 | Pending |
-| PERS-04 | 2 | Pending |
+| PERS-01 | 2 | In Progress — query layer complete (02-01) |
+| PERS-02 | 2 | In Progress — query layer complete (02-01) |
+| PERS-03 | 2 | In Progress — query layer complete (02-01) |
+| PERS-04 | 2 | In Progress — query layer complete (02-01) |
 | RELY-01 | 2 | Pending |
 | RELY-02 | 2 | Pending |
 | RELY-03 | 2 | Pending |
@@ -106,4 +106,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
-*Last updated: 2026-03-24 — Plan 02 (drizzle-schema-and-client) complete; migration pending human action*
+*Last updated: 2026-03-24 — Plan 02-01 (db-query-layer) complete; all 7 CRUD functions in queries.ts*
