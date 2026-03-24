@@ -60,7 +60,7 @@ Every line of feature code written in Phase 2 and 3 depends on a working Drizzle
 ## Phase 2: Core Loop
 
 **Requirements:** MSG-01, MSG-02, MSG-03, MSG-04, MSG-05, PERS-01, PERS-02, PERS-03, PERS-04, RELY-01, RELY-02, RELY-03
-**Status:** In Progress — Plans 02-01 (db-query-layer) and 02-02 (route-handler) complete
+**Status:** In Progress — Plans 02-01 (db-query-layer), 02-02 (route-handler), and 02-03 (chat-components) complete
 
 ### Rationale
 

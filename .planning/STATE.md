@@ -13,23 +13,23 @@ progress:
 
 # Project State: Streaming Chatbot
 
-**Last updated:** 2026-03-24 — Plan 02-02 (route-handler) complete; streaming route with persistence, retry, and onFinish
+**Last updated:** 2026-03-24 — Plans 02-02 (route-handler) and 02-03 (chat-components) complete
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 2 — Core Loop** (Plans 02-01 and 02-02 complete)
+**Phase 2 — Core Loop** (Plans 02-01, 02-02, and 02-03 complete)
 
-Building the full streaming request/response loop: LLM integration, persistence, retry, and base UI components. Plans 02-01 (DB query layer) and 02-02 (route handler) complete.
+Building the full streaming request/response loop: LLM integration, persistence, retry, and base UI components. Plans 02-01 (DB query layer), 02-02 (route handler), and 02-03 (Chat UI components) complete.
 
 ## Phase Summary
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 | Foundation | INFRA-01–04 | **In Progress** (2/2 plans done — SC2/SC3 pending .env.local + db:migrate) |
-| 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | **In Progress** (02-01 and 02-02 complete) |
+| 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | **In Progress** (02-01, 02-02, 02-03 complete) |
 | 3 | Conversations UI | CONV-01–05 | Not started |
 
 ## Requirement Status
@@ -40,11 +40,11 @@ Building the full streaming request/response loop: LLM integration, persistence,
 | INFRA-02 | 1 | Complete (01-02) — schema + migration SQL committed; db:apply pending human action |
 | INFRA-03 | 1 | Complete (01-02) — migration SQL generated + committed; db:migrate pending human action |
 | INFRA-04 | 1 | Complete (01-01, 01-02) — route stub + smoke test created; runtime verify pending .env.local |
-| MSG-01 | 2 | In Progress — route handler complete (02-02) |
-| MSG-02 | 2 | In Progress — streaming via toUIMessageStreamResponse() (02-02) |
-| MSG-03 | 2 | In Progress — full message history sent to LLM (02-02) |
-| MSG-04 | 2 | Pending |
-| MSG-05 | 2 | Pending |
+| MSG-01 | 2 | In Progress — route handler (02-02) + UI components (02-03) complete |
+| MSG-02 | 2 | In Progress — streaming via toUIMessageStreamResponse() (02-02); MessageList renders tokens (02-03) |
+| MSG-03 | 2 | In Progress — full history sent to LLM (02-02); seeded via useChat.messages (02-03) |
+| MSG-04 | 2 | In Progress — pulsing dots loading indicator in thread (02-03) |
+| MSG-05 | 2 | In Progress — inline error bubble in thread (02-03) |
 | PERS-01 | 2 | In Progress — query layer complete (02-01) |
 | PERS-02 | 2 | In Progress — user message saved before LLM call (02-02) |
 | PERS-03 | 2 | In Progress — assistant saved in onFinish with try/catch (02-02) |
@@ -106,4 +106,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
-*Last updated: 2026-03-24 — Plan 02-02 (route-handler) complete; streaming POST handler with chatId validation, user message persistence, convertToModelMessages, maxRetries: 2, onFinish assistant persistence with try/catch*
+*Last updated: 2026-03-24 — Plans 02-02 (route-handler) and 02-03 (chat-components) complete; ChatInterface, MessageList, MessageInput created (commit 6758283)*
