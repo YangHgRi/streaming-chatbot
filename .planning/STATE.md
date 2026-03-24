@@ -1,13 +1,13 @@
 # Project State: Streaming Chatbot
 
-**Last updated:** 2026-03-24
+**Last updated:** 2026-03-24 — Plan 02 (drizzle-schema-and-client) complete (migration pending human action)
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 1 — Foundation** (Plan 01 complete, Plan 02 next)
+**Phase 1 — Foundation** (Plan 01 complete, Plan 02 complete — migration pending human action)
 
 Establishing the project scaffold, pinned package versions, Drizzle schema, database migrations, and environment variable wiring. No feature code is written until this phase is complete and verified.
 
@@ -15,7 +15,7 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 | Foundation | INFRA-01–04 | **In Progress** (1/2 plans done) |
+| 1 | Foundation | INFRA-01–04 | **In Progress** (2/2 plans done — SC2/SC3 pending .env.local + db:migrate) |
 | 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | Not started |
 | 3 | Conversations UI | CONV-01–05 | Not started |
 
@@ -24,9 +24,9 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 | ID | Phase | Status |
 |----|-------|--------|
 | INFRA-01 | 1 | Complete (01-01) |
-| INFRA-02 | 1 | Pending |
-| INFRA-03 | 1 | Pending |
-| INFRA-04 | 1 | Complete (01-01) |
+| INFRA-02 | 1 | Complete (01-02) — schema + migration SQL committed; db:apply pending human action |
+| INFRA-03 | 1 | Complete (01-02) — migration SQL generated + committed; db:migrate pending human action |
+| INFRA-04 | 1 | Complete (01-01, 01-02) — route stub + smoke test created; runtime verify pending .env.local |
 | MSG-01 | 2 | Pending |
 | MSG-02 | 2 | Pending |
 | MSG-03 | 2 | Pending |
@@ -45,17 +45,17 @@ Establishing the project scaffold, pinned package versions, Drizzle schema, data
 | CONV-04 | 3 | Pending |
 | CONV-05 | 3 | Pending |
 
-**Coverage: 21 / 21 v1 requirements assigned. 2 complete (INFRA-01, INFRA-04).**
+**Coverage: 21 / 21 v1 requirements assigned. 4 complete (INFRA-01 through INFRA-04 — INFRA-02/03 apply step pending human action).**
 
 ## Phase Completion Gates
 
 A phase is complete when all of its success criteria (defined in ROADMAP.md) are observable in the running application — not when implementation tasks are checked off.
 
 **Phase 1 gates:**
-- `npm run dev` starts cleanly with only env vars set
-- `drizzle-kit migrate` creates the correct schema on a fresh DB
-- A Server Component query executes without error
-- No hardcoded credentials anywhere in source
+- `npm run dev` starts cleanly with only env vars set — PENDING .env.local
+- `drizzle-kit migrate` creates the correct schema on a fresh DB — PENDING human action (see checkpoint)
+- A Server Component query executes without error — PENDING .env.local + db:migrate
+- No hardcoded credentials anywhere in source — ✅ PASSED (SC4 verified)
 
 **Phase 2 gates:**
 - First streaming token arrives before full response completes (`Transfer-Encoding: chunked` visible in DevTools)
@@ -80,6 +80,8 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 | 2026-03-24 | create-next-app scaffolds into scaffold-tmp/ then moved to root | CLI refuses to scaffold into existing dirs with non-standard files (.planning/). Workaround: scaffold then copy. All .git/ and .planning/ preserved. |
 | 2026-03-24 | Tailwind v4 installed (no tailwind.config.ts) | create-next-app@16.2.1 installs Tailwind v4 which uses @tailwindcss/postcss + postcss.config.mjs. No tailwind.config.ts file — this is correct v4 behavior. |
 | 2026-03-24 | All runtime deps pinned without ^ | npm adds ^ by default. Manually edited package.json to remove ^ from all critical packages post-install. |
+| 2026-03-24 | toUIMessageStreamResponse() replaces toDataStreamResponse() in ai@6.x | ai@6.0.137 removed toDataStreamResponse(); replaced by toUIMessageStreamResponse() which is the correct v6 API for useChat compatibility. |
+| 2026-03-24 | db:migrate checkpoint created | .env.local missing and postgres password unknown; all code committed; checkpoint at .planning/checkpoints/cp-01-02-db-migrate.md guides human through setup. |
 
 ## Notes
 
@@ -88,4 +90,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
-*Last updated: 2026-03-24 — Plan 01 (scaffold-and-packages) complete*
+*Last updated: 2026-03-24 — Plan 02 (drizzle-schema-and-client) complete; migration pending human action*
