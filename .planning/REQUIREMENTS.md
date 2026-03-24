@@ -84,6 +84,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | INFRA-02 | Phase 1 | Pending |
 | INFRA-03 | Phase 1 | Pending |
 | INFRA-04 | Phase 1 | Pending |
+| MSG-01 | Phase 2 | Pending |
+| MSG-02 | Phase 2 | Pending |
+| MSG-03 | Phase 2 | Pending |
+| MSG-04 | Phase 2 | Pending |
+| MSG-05 | Phase 2 | Pending |
 | PERS-01 | Phase 2 | Pending |
 | PERS-02 | Phase 2 | Pending |
 | PERS-03 | Phase 2 | Pending |
@@ -91,11 +96,6 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RELY-01 | Phase 2 | Pending |
 | RELY-02 | Phase 2 | Pending |
 | RELY-03 | Phase 2 | Pending |
-| MSG-01 | Phase 2 | Pending |
-| MSG-02 | Phase 2 | Pending |
-| MSG-03 | Phase 2 | Pending |
-| MSG-04 | Phase 2 | Pending |
-| MSG-05 | Phase 2 | Pending |
 | CONV-01 | Phase 3 | Pending |
 | CONV-02 | Phase 3 | Pending |
 | CONV-03 | Phase 3 | Pending |
@@ -103,10 +103,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONV-05 | Phase 3 | Pending |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 18
+- v1 requirements: 21 total (INFRA-01–04, MSG-01–05, CONV-01–05, PERS-01–04, RELY-01–03)
+- Mapped to phases: 21
 - Unmapped: 0 ✓
+
+*Note: Earlier drafts of this file stated 18 requirements. The correct count is 21. The traceability table above is authoritative.*
 
 ---
 *Requirements defined: 2025-07-14*
-*Last updated: 2025-07-14 after initial definition*
+*Last updated: 2025-07-14 — traceability updated after roadmap creation; coverage corrected to 21*
