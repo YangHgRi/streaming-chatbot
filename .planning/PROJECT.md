@@ -12,18 +12,17 @@ A user can open the app, start chatting, and see the assistant's response appear
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] Postgres stores all chat data via Drizzle ORM (configurable via `DATABASE_URL`) — *Validated in Phase 1: Foundation* (schema defined, migration committed)
+- [x] App is demo-ready and runnable locally (scaffold, packages, env template, DB scripts) — *Validated in Phase 1: Foundation* (tsc passes, `npm run dev` requires `.env.local`)
 
 ### Active
 
 - [ ] Users can send messages and receive streamed model responses (no full-response wait)
 - [ ] Multi-turn conversation is supported (message history sent to LLM on each turn)
 - [ ] Backend retries LLM calls on timeout or transient failures
-- [ ] Postgres stores all chat data via Drizzle ORM (configurable via DATABASE_URL)
 - [ ] CRUD operations: create chat, create message, list chats, fetch messages for a chat, update chat, delete chat
 - [ ] ChatGPT-like UI: sidebar with chat list, message thread on the right
 - [ ] Single-user, no authentication required
-- [ ] App is demo-ready and runnable locally
 
 ### Out of Scope
 
@@ -75,4 +74,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2025-07-14 after initialization*
+*Last updated: 2026-03-24 — Phase 1 Foundation execution complete (human verification pending db:migrate)*

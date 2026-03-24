@@ -24,7 +24,7 @@ All 21 v1 requirements assigned before phases are defined.
 ## Phase 1: Foundation
 
 **Requirements:** INFRA-01, INFRA-02, INFRA-03, INFRA-04
-**Status:** In Progress — Plans 01 and 02 complete; SC2/SC3 pending human action (.env.local + db:migrate)
+**Status:** Human Verification Required — Plans 01 and 02 complete (INFRA-01, INFRA-02 verified ✓); INFRA-03/04 need db:migrate + npm run dev smoke test (see `01-HUMAN-UAT.md`)
 
 ### Rationale
 
