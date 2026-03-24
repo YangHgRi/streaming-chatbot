@@ -1,17 +1,29 @@
-import { db } from '@/lib/db';
-import { chats } from '@/lib/db/schema';
+import { redirect } from 'next/navigation';
+import { createChat } from '@/lib/db/queries';
 
-export default async function HomePage() {
-  const allChats = await db.select().from(chats);
+async function startChat() {
+  'use server';
+  const chat = await createChat();
+  redirect(`/chat/${chat.id}`);
+}
 
+export default function HomePage() {
   return (
-    <main style={{ fontFamily: 'monospace', padding: '2rem' }}>
-      <h1>Streaming Chatbot</h1>
-      <p>DB connection: OK</p>
-      <p>Chats in database: {allChats.length}</p>
-      <pre style={{ fontSize: '0.8rem', color: '#888' }}>
-        {JSON.stringify(allChats, null, 2)}
-      </pre>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+      <div className="text-center space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900">Streaming Chat</h1>
+          <p className="text-gray-500">Start a conversation with the AI assistant</p>
+        </div>
+        <form action={startChat}>
+          <button
+            type="submit"
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Start New Chat
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
