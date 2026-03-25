@@ -21,8 +21,8 @@ A user can open the app, start chatting, and see the assistant's response appear
 - [x] Multi-turn conversation is supported (message history sent to LLM on each turn) — *Validated in Phase 2: Core Loop*
 - [x] Backend retries LLM calls on timeout or transient failures — *Validated in Phase 2: Core Loop*
 - [x] CRUD operations: create chat, create message, list chats, fetch messages for a chat, update chat, delete chat — *Validated in Phase 2: Core Loop*
-- [ ] ChatGPT-like UI: sidebar with chat list, message thread on the right
-- [ ] Single-user, no authentication required
+- [x] ChatGPT-like UI: sidebar with chat list, message thread on the right — *Validated in Phase 3: Conversations UI*
+- [x] Single-user, no authentication required — *Validated in Phase 3: Conversations UI*
 
 ### Out of Scope
 
@@ -74,4 +74,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 — Phase 2 Core Loop execution complete (runtime UAT pending: streaming confirmation, history restore, retry dedup)*
+*Last updated: 2026-03-25 — Phase 3 Conversations UI complete (runtime UAT pending: sidebar smoke test, rename/delete persistence, stream-switch token bleed)*
