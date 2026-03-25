@@ -106,7 +106,7 @@ Streaming, persistence, and retry are not independently shippable units — a st
 ## Phase 3: Conversations UI
 
 **Requirements:** CONV-01, CONV-02, CONV-03, CONV-04, CONV-05
-**Status:** Not started
+**Status:** In Progress — Plan 03-01 (layout-foundation) complete; 03-02 and 03-03 pending
 
 ### Rationale
 
@@ -161,3 +161,4 @@ With a proven streaming and persistence core, the UI shell can be built on a sta
 *Plan 02-02 (route-handler) completed: 2026-03-24 — streaming POST handler with chatId validation, user msg persistence, convertToModelMessages, maxRetries: 2, onFinish assistant persistence with try/catch*
 *Plan 02-03 (chat-components) completed: 2026-03-24 — ChatInterface, MessageList, MessageInput created*
 *Plan 02-04 (chat-page) completed: 2026-03-24 — chat/[chatId]/page.tsx Server Component + root page Server Action (commit abf6d39)*
+*Plan 03-01 (layout-foundation) completed: 2026-03-25 — lucide-react installed, Sidebar stub, two-column root layout, auto-redirect root page, chat page h-full + dynamic title (commits 11d6291–2e84028)*

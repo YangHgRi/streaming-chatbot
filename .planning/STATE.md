@@ -2,27 +2,27 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-last_updated: "2026-03-24T17:12:33.730Z"
+status: Executing Phase 03
+last_updated: "2026-03-25T09:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 4
+  total_plans: 3
+  completed_plans: 5
 ---
 
 # Project State: Streaming Chatbot
 
-**Last updated:** 2026-03-24 — Plans 02-01, 02-02, 02-03, and 02-04 complete (all Phase 2 implementation plans done)
+**Last updated:** 2026-03-25 — Plan 03-01 complete (layout foundation, Sidebar stub, auto-redirect root page, chat page fixes)
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 2 — Core Loop** (Plans 02-01, 02-02, 02-03, and 02-04 complete)
+**Phase 3 — Conversations UI** (Plan 03-01 complete; 03-02 and 03-03 pending)
 
-Building the full streaming request/response loop: LLM integration, persistence, retry, and base UI components. All 4 implementation plans complete. Pending human UAT: db:migrate + npm run dev smoke test.
+Building the ChatGPT-style UI: sidebar listing conversations, per-chat rename/delete, mid-stream safe chat switching. Plan 03-01 (layout foundation) complete.
 
 ## Phase Summary
 
@@ -30,7 +30,7 @@ Building the full streaming request/response loop: LLM integration, persistence,
 |-------|------|--------------|--------|
 | 1 | Foundation | INFRA-01–04 | **In Progress** (2/2 plans done — SC2/SC3 pending .env.local + db:migrate) |
 | 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | **In Progress** (02-01, 02-02, 02-03, 02-04 complete — pending human UAT) |
-| 3 | Conversations UI | CONV-01–05 | Not started |
+| 3 | Conversations UI | CONV-01–05 | **In Progress** (03-01 complete — layout foundation, Sidebar stub, auto-redirect, chat page fixes) |
 
 ## Requirement Status
 
@@ -52,9 +52,9 @@ Building the full streaming request/response loop: LLM integration, persistence,
 | RELY-01 | 2 | In Progress — maxRetries: 2 with exponential backoff (02-02) |
 | RELY-02 | 2 | In Progress — user message outside retry loop, no duplication (02-02) |
 | RELY-03 | 2 | Pending |
-| CONV-01 | 3 | Pending |
+| CONV-01 | 3 | In Progress — two-column layout + auto-redirect root page (03-01) |
 | CONV-02 | 3 | Pending |
-| CONV-03 | 3 | Pending |
+| CONV-03 | 3 | In Progress — chat page h-full + dynamic title (03-01) |
 | CONV-04 | 3 | Pending |
 | CONV-05 | 3 | Pending |
 
@@ -106,4 +106,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
-*Last updated: 2026-03-24 — Plan 02-04 (chat-page) complete; chat/[chatId]/page.tsx Server Component + root page Server Action created (commit abf6d39)*
+*Last updated: 2026-03-25 — Plan 03-01 (layout-foundation) complete; lucide-react installed, Sidebar stub, two-column layout, auto-redirect root, chat page h-full + dynamic title (commits 11d6291–2e84028)*
