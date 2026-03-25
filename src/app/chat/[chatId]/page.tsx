@@ -1,8 +1,7 @@
 import type { UIMessage } from 'ai';
-import { getMessages } from '@/lib/db/queries';
+import { getMessages, getChat } from '@/lib/db/queries';
 import { ChatInterface } from '@/components/ChatInterface';
 import { notFound } from 'next/navigation';
-import { getChat } from '@/lib/db/queries';
 
 export default async function ChatPage({
   params,
@@ -29,13 +28,13 @@ export default async function ChatPage({
   }));
 
   return (
-    <main className="flex flex-col h-screen bg-gray-50">
-      <header className="border-b bg-white px-6 py-4">
-        <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
+    <div className="flex flex-col h-full bg-gray-50">
+      <header className="border-b border-gray-200 bg-white px-6 py-4 flex-shrink-0">
+        <h1 className="text-lg font-semibold text-gray-900">{chat.title}</h1>
       </header>
       <div className="flex-1 overflow-hidden">
         <ChatInterface chatId={chatId} initialMessages={initialMessages} />
       </div>
-    </main>
+    </div>
   );
 }
