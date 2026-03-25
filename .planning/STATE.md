@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 03
-last_updated: "2026-03-25T10:30:00.000Z"
+last_updated: "2026-03-25T11:30:00.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
@@ -13,14 +13,14 @@ progress:
 
 # Project State: Streaming Chatbot
 
-**Last updated:** 2026-03-25 — Plan 03-02 complete (Sidebar async Server Component, SidebarClient with chat list + active highlight + hover-reveal actions, ChatInterface useEffect stream cleanup)
+**Last updated:** 2026-03-25 — Plan 03-03 complete (Server Actions: createChatAction, renameChatAction, deleteChatAction; Sidebar.tsx wired with real actions; all CONV-01/04/05 requirements implemented; Phase 3 all plans complete — pending runtime UAT)
 **Project definition:** See [PROJECT.md](./PROJECT.md)
 **Roadmap:** See [ROADMAP.md](./ROADMAP.md)
 **Requirements:** See [REQUIREMENTS.md](./REQUIREMENTS.md)
 
 ## Current Phase
 
-**Phase 3 — Conversations UI** (Plans 03-01 and 03-02 complete; 03-03 pending)
+**Phase 3 — Conversations UI** (All plans complete: 03-01, 03-02, 03-03 — pending runtime UAT)
 
 Building the ChatGPT-style UI: sidebar listing conversations, per-chat rename/delete, mid-stream safe chat switching. Plans 03-01 (layout foundation) and 03-02 (Sidebar + SidebarClient + stream cleanup) complete.
 
@@ -30,7 +30,7 @@ Building the ChatGPT-style UI: sidebar listing conversations, per-chat rename/de
 |-------|------|--------------|--------|
 | 1 | Foundation | INFRA-01–04 | **In Progress** (2/2 plans done — SC2/SC3 pending .env.local + db:migrate) |
 | 2 | Core Loop | MSG-01–05, PERS-01–04, RELY-01–03 | **In Progress** (02-01, 02-02, 02-03, 02-04 complete — pending human UAT) |
-| 3 | Conversations UI | CONV-01–05 | **In Progress** (03-01 complete — layout foundation; 03-02 complete — Sidebar Server Component, SidebarClient, stream cleanup; 03-03 pending) |
+| 3 | Conversations UI | CONV-01–05 | **In Progress** (03-01 complete — layout foundation; 03-02 complete — Sidebar Server Component, SidebarClient, stream cleanup; 03-03 complete — Server Actions wired; pending runtime UAT) |
 
 ## Requirement Status
 
@@ -55,8 +55,8 @@ Building the ChatGPT-style UI: sidebar listing conversations, per-chat rename/de
 | CONV-01 | 3 | In Progress — two-column layout + auto-redirect root page (03-01) |
 | CONV-02 | 3 | In Progress — SidebarClient renders chat list from getChats() with active highlight (03-02) |
 | CONV-03 | 3 | In Progress — chat page h-full + dynamic title (03-01); stop() cleanup on chatId change (03-02) |
-| CONV-04 | 3 | Pending |
-| CONV-05 | 3 | Pending |
+| CONV-04 | 3 | In Progress — renameChatAction wired via SidebarClient form action; persists to Postgres via updateChat(); revalidatePath('/', 'layout') (03-03) |
+| CONV-05 | 3 | In Progress — deleteChatAction wired via SidebarClient; deleteChat() CASCADE removes messages; redirects to '/' (03-03) |
 
 **Coverage: 21 / 21 v1 requirements assigned. 4 complete (INFRA-01 through INFRA-04 — INFRA-02/03 apply step pending human action).**
 
@@ -106,4 +106,4 @@ A phase is complete when all of its success criteria (defined in ROADMAP.md) are
 
 ---
 *State file created: 2025-07-14*
-*Last updated: 2026-03-25 — Plan 03-02 (sidebar-server-component) complete; Sidebar async SC, SidebarClient (chat list, active highlight, hover-reveal rename/delete), ChatInterface useEffect stop() cleanup (commits f9cf242–bba95df)*
+*Last updated: 2026-03-25 — Plan 03-03 (server-actions) complete; createChatAction, renameChatAction, deleteChatAction in actions.ts; Sidebar.tsx wired with real actions; SidebarClientProps updated to Promise<void>; tsc clean (commits 700356e–faeba5c)*
