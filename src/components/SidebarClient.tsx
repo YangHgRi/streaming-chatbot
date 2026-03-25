@@ -7,9 +7,9 @@ import type { Chat } from '@/lib/db/schema';
 
 interface SidebarClientProps {
   chats: Chat[];
-  createChatAction: () => Promise<never>;
+  createChatAction: () => Promise<void>;
   renameChatAction: (chatId: string, formData: FormData) => Promise<void>;
-  deleteChatAction: (chatId: string) => Promise<never>;
+  deleteChatAction: (chatId: string) => Promise<void>;
 }
 
 export function SidebarClient({
