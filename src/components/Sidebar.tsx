@@ -1,13 +1,35 @@
 // src/components/Sidebar.tsx
-// Stub — replaced with full implementation in plan 03-02.
-// Renders the sidebar shell structure so layout.tsx compiles.
+// Server Component — no 'use client' directive.
+// Fetches all chats from Postgres and passes them to SidebarClient for rendering.
+// Re-fetches on every request after revalidatePath('/', 'layout') is called by a Server Action.
+//
+// Stub actions below will be replaced in plan 03-03 once actions.ts exists.
+// They exist only to satisfy TypeScript while SidebarClient awaits real Server Actions.
+import { getChats } from '@/lib/db/queries';
+import { SidebarClient } from './SidebarClient';
 
-export function Sidebar() {
+async function stubCreateChatAction(): Promise<never> {
+  'use server';
+  throw new Error('createChatAction not yet implemented — wired in plan 03-03');
+}
+
+async function stubRenameChatAction(_chatId: string, _formData: FormData): Promise<void> {
+  'use server';
+}
+
+async function stubDeleteChatAction(_chatId: string): Promise<never> {
+  'use server';
+  throw new Error('deleteChatAction not yet implemented — wired in plan 03-03');
+}
+
+export async function Sidebar() {
+  const chats = await getChats();
   return (
-    <aside className="w-64 flex-shrink-0 bg-gray-900 text-white flex flex-col h-full">
-      <div className="p-4 border-b border-gray-700">
-        <span className="text-sm font-medium text-gray-300">Loading…</span>
-      </div>
-    </aside>
+    <SidebarClient
+      chats={chats}
+      createChatAction={stubCreateChatAction}
+      renameChatAction={stubRenameChatAction}
+      deleteChatAction={stubDeleteChatAction}
+    />
   );
 }
