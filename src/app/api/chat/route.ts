@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createMessage } from '@/lib/db/queries';
+import { createMessage, updateChat } from '@/lib/db/queries';
 
 // Instantiate provider with optional base URL override.
 // Set OPENAI_API_BASE_URL in .env.local to point at a custom endpoint
@@ -13,26 +13,45 @@ const openai = createOpenAI({
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-   const { id: chatId, messages } = await req.json();
+   // Issue #3: parse body safely — malformed JSON returns 400 instead of 500
+   let body: { id?: unknown; messages?: unknown };
+   try {
+      body = await req.json();
+   } catch {
+      return new Response('Invalid JSON body', { status: 400 });
+   }
+
+   const { id: chatId, messages } = body;
 
    // Validate chatId — required to associate messages with a conversation
    if (!chatId || typeof chatId !== 'string') {
-      return new Response('Missing chatId', { status: 400 });
+      return new Response('Missing or invalid chatId', { status: 400 });
+   }
+
+   // Issue #3: validate messages field before use
+   if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response('Missing or invalid messages array', { status: 400 });
    }
 
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
    // (PERS-02, RELY-02 — user message saved exactly once, outside retry loop)
    // The last message in the array is always the new user message for trigger=submit-message
-   const lastMessage = messages.at(-1);
+   const lastMessage = messages.at(-1) as Record<string, unknown> | undefined;
    if (lastMessage?.role === 'user') {
+      // Issue #7: use explicit type guard instead of inline cast
+      const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
+      const content = parts
+         .filter((p): p is { type: 'text'; text: string } =>
+            typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'text',
+         )
+         .map((p) => p.text)
+         .join('');
+
       await createMessage({
          id: crypto.randomUUID(),
          chatId,
          role: 'user',
-         content: lastMessage.parts
-            ?.filter((p: { type: string }) => p.type === 'text')
-            .map((p: { type: string; text: string }) => p.text)
-            .join('') ?? '',
+         content,
       });
    }
 
@@ -61,6 +80,9 @@ export async function POST(req: Request) {
                role: 'assistant',
                content: text,
             });
+
+            // Issue #2: update updatedAt so getChats() sorts this chat to the top
+            await updateChat(chatId, {});
          } catch (err) {
             // Silent DB failures are unacceptable — log explicitly
             console.error('[chat] CRITICAL: Failed to persist assistant message:', {
