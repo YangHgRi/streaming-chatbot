@@ -22,6 +22,11 @@ export const db: DbInstance =
    globalForDb.db ??
    drizzle(postgres(url, { max: 10 }), { schema });
 
+// V5: In production, modules are evaluated once per process — no HMR re-evaluation,
+// so writing to globalThis is unnecessary and would leak state across requests.
+// In development, Next.js HMR re-evaluates modules on every hot reload; without
+// this guard a new postgres connection pool would be created on every file save,
+// exhausting the database's max_connections limit quickly.
 if (process.env.NODE_ENV !== 'production') {
    globalForDb.db = db;
 }

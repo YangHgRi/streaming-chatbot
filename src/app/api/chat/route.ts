@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createMessage, updateChat } from '@/lib/db/queries';
+import { createMessage, updateChat, getChat } from '@/lib/db/queries';
 
 // Instantiate provider with optional base URL override.
 // Set OPENAI_API_BASE_URL in .env.local to point at a custom endpoint
@@ -26,6 +26,15 @@ export async function POST(req: Request) {
    // Validate chatId — required to associate messages with a conversation
    if (!chatId || typeof chatId !== 'string') {
       return new Response('Missing or invalid chatId', { status: 400 });
+   }
+
+   // V2: verify the chat exists in the DB before touching messages.
+   // Without this, an unknown chatId triggers a PostgreSQL FK violation (23503)
+   // which bubbles up as an unhandled 500. The ChatPage SSR guard does not
+   // protect this API route — it must defend itself.
+   const chat = await getChat(chatId);
+   if (!chat) {
+      return new Response('Chat not found', { status: 404 });
    }
 
    // Issue #3: validate messages field before use
@@ -62,7 +71,14 @@ export async function POST(req: Request) {
       const msgId =
          typeof lastMessage.id === 'string' && lastMessage.id.length > 0
             ? lastMessage.id
-            : crypto.randomUUID();
+            : (() => {
+               // V1: SDK should always assign a stable id; if it is missing
+               // the onConflictDoNothing idempotency guarantee breaks and the
+               // same user message may be inserted on every client retry.
+               // Log a warning so any regression surfaces in server logs.
+               console.warn('[chat] lastMessage.id missing — falling back to randomUUID(); retries may duplicate this message');
+               return crypto.randomUUID();
+            })();
 
       await createMessage({
          id: msgId,
