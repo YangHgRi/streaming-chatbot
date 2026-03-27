@@ -21,8 +21,11 @@ export function MessageInput({
       el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
    }, [input]);
 
-   function handleSubmit(e: React.FormEvent) {
-      e.preventDefault();
+   // T5: extract submitIfValid() so both the form's onSubmit handler and the
+   // onKeyDown handler share the same code path without needing an unsafe
+   // cross-type cast (KeyboardEvent → FormEvent). Each caller is responsible
+   // for calling e.preventDefault() before invoking this helper.
+   function submitIfValid() {
       if (!input.trim() || isLoading) return;
       onSend(input.trim());
       setInput('');
@@ -30,6 +33,11 @@ export function MessageInput({
       if (textareaRef.current) {
          textareaRef.current.style.height = 'auto';
       }
+   }
+
+   function handleSubmit(e: React.FormEvent) {
+      e.preventDefault();
+      submitIfValid();
    }
 
    return (
@@ -41,7 +49,8 @@ export function MessageInput({
             onKeyDown={(e) => {
                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSubmit(e as unknown as React.FormEvent);
+                  // T5: call submitIfValid() directly — no unsafe cast needed
+                  submitIfValid();
                }
             }}
             disabled={isLoading}

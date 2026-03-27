@@ -25,7 +25,10 @@ export function MessageList({
    const bottomRef = useRef<HTMLDivElement>(null);
 
    useEffect(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      // T4: use 'instant' instead of 'smooth' — during streaming, messages array
+      // gets a new reference on every token, triggering a new smooth animation that
+      // cancels the previous one and causes visible jank. 'instant' completes atomically.
+      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
    }, [messages, isLoading]);
 
    return (
@@ -37,8 +40,8 @@ export function MessageList({
             >
                <div
                   className={`max-w-[80%] rounded-lg px-4 py-2 ${message.role === 'user'
-                        ? 'bg-gray-200 text-gray-900'
-                        : 'bg-white border border-gray-200 text-gray-900'
+                     ? 'bg-gray-200 text-gray-900'
+                     : 'bg-white border border-gray-200 text-gray-900'
                      }`}
                >
                   {message.role === 'assistant' ? (

@@ -34,7 +34,11 @@ function RenameInput({
          action={renameChatAction.bind(null, chatId)}
          className="flex-1 min-w-0 px-2 py-1"
          onSubmit={() => {
-            isCancellingRef.current = false;
+            // T2: set the flag to true so the onBlur that fires immediately
+            // after submit (input losing focus during unmount) is suppressed.
+            // Without this, blur sees flag===false and calls requestSubmit()
+            // a second time, sending the rename Server Action twice.
+            isCancellingRef.current = true;
             onDone();
          }}
       >

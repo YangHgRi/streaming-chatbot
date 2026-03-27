@@ -47,8 +47,25 @@ export async function POST(req: Request) {
          .map((p) => p.text)
          .join('');
 
+      // T3: server-side guard — skip insert when there is no text content
+      // (e.g. a message composed entirely of non-text parts). The client
+      // already prevents empty sends, but we must not trust client input.
+      if (!content) {
+         return new Response('Empty message content', { status: 400 });
+      }
+
+      // T1: use the UIMessage's own stable id as the DB row id.
+      // crypto.randomUUID() produced a new id on every request, so
+      // onConflictDoNothing() never fired on retry — the same user message
+      // was inserted repeatedly. lastMessage.id is assigned by the SDK and
+      // remains constant across client retries.
+      const msgId =
+         typeof lastMessage.id === 'string' && lastMessage.id.length > 0
+            ? lastMessage.id
+            : crypto.randomUUID();
+
       await createMessage({
-         id: crypto.randomUUID(),
+         id: msgId,
          chatId,
          role: 'user',
          content,
