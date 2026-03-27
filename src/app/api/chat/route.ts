@@ -2,6 +2,16 @@ import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
 
+// W4: validate OPENAI_API_KEY at module load — gives a clear error message in dev
+// instead of a cryptic 401 / SDK exception on the first request.
+// Mirrors the DATABASE_URL guard in src/lib/db/index.ts.
+if (!process.env.OPENAI_API_KEY) {
+   throw new Error(
+      'OPENAI_API_KEY environment variable is not set. ' +
+      'Copy .env.local.example to .env.local and fill in the value.',
+   );
+}
+
 // Instantiate provider with optional base URL override.
 // Set OPENAI_API_BASE_URL in .env.local to point at a custom endpoint
 // (e.g. a proxy, Azure OpenAI, or any OpenAI-compatible API).
@@ -28,6 +38,12 @@ export async function POST(req: Request) {
       return new Response('Missing or invalid chatId', { status: 400 });
    }
 
+   // W6: run cheap in-memory validations before any DB round-trip.
+   // A malformed request should be rejected without touching the database.
+   if (!Array.isArray(messages) || messages.length === 0) {
+      return new Response('Missing or invalid messages array', { status: 400 });
+   }
+
    // V2: verify the chat exists in the DB before touching messages.
    // Without this, an unknown chatId triggers a PostgreSQL FK violation (23503)
    // which bubbles up as an unhandled 500. The ChatPage SSR guard does not
@@ -35,11 +51,6 @@ export async function POST(req: Request) {
    const chat = await getChat(chatId);
    if (!chat) {
       return new Response('Chat not found', { status: 404 });
-   }
-
-   // Issue #3: validate messages field before use
-   if (!Array.isArray(messages) || messages.length === 0) {
-      return new Response('Missing or invalid messages array', { status: 400 });
    }
 
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
@@ -50,9 +61,14 @@ export async function POST(req: Request) {
       // Issue #7: use explicit type guard instead of inline cast
       const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
       const content = parts
-         .filter((p): p is { type: 'text'; text: string } =>
-            typeof p === 'object' && p !== null && (p as Record<string, unknown>).type === 'text',
-         )
+         .filter((p): p is { type: 'text'; text: string } => {
+            // W2: the predicate must verify BOTH type === 'text' AND that text is a
+            // string. Checking only `type` lets through { type:'text', text: undefined }
+            // which TypeScript treats as string but joins as the literal "undefined".
+            if (typeof p !== 'object' || p === null) return false;
+            const r = p as Record<string, unknown>;
+            return r.type === 'text' && typeof r.text === 'string';
+         })
          .map((p) => p.text)
          .join('');
 

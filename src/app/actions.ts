@@ -18,9 +18,13 @@ export async function createChatAction() {
 // Guard: returns early on blank/whitespace — prevents saving empty titles.
 // No redirect — user stays on the current chat; sidebar title updates via revalidatePath.
 export async function renameChatAction(chatId: string, formData: FormData) {
-   const title = formData.get('title') as string;
-   if (!title?.trim()) return;
-   await updateChat(chatId, { title: title.trim() });
+   // W3: FormData.get() returns string | File | null.
+   // The previous 'as string' cast bypassed the File branch — if a file field with
+   // the same name were submitted, .trim() would throw TypeError at runtime.
+   // A typeof guard narrows to string safely before any further operations.
+   const raw = formData.get('title');
+   if (typeof raw !== 'string' || !raw.trim()) return;
+   await updateChat(chatId, { title: raw.trim() });
    revalidatePath('/', 'layout');
 }
 

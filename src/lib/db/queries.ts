@@ -16,6 +16,10 @@ export async function createChat(id?: string): Promise<Chat> {
       .insert(chats)
       .values({ id: chatId, title: 'New Chat' })
       .returning();
+   // W5: returning() yields an empty array only if the INSERT produces no rows,
+   // which cannot happen here (no onConflictDoNothing). Guard anyway for type
+   // soundness and consistency with createMessage().
+   if (!chat) throw new Error('createChat: INSERT returned no rows — this should never happen');
    return chat;
 }
 

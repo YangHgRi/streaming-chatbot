@@ -81,19 +81,23 @@ export function SidebarClient({
    const [editingId, setEditingId] = useState<string | null>(null);
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const [isPending, startTransition] = useTransition();
+   // W1: a second, independent transition for chat creation so 'isCreating' only
+   // tracks the createChatAction call. Using the shared isPending transition meant
+   // 'Creating…' / disabled state only fired during deletes, never during creation.
+   const [isCreating, startCreateTransition] = useTransition();
 
    return (
       <aside className="w-64 flex-shrink-0 bg-gray-900 text-white flex flex-col h-full">
          {/* Header: New Chat button */}
          <div className="p-4 border-b border-gray-700">
-            <form action={createChatAction}>
+            <form action={() => startCreateTransition(createChatAction)}>
                <button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isCreating}
                   className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm text-white font-medium transition-colors"
                >
                   <Plus size={16} />
-                  {isPending ? 'Creating…' : 'New Chat'}
+                  {isCreating ? 'Creating…' : 'New Chat'}
                </button>
             </form>
          </div>
