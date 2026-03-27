@@ -18,13 +18,9 @@ const globalForDb = globalThis as unknown as {
    db: DbInstance | undefined;
 };
 
-const client = globalForDb.db
-   ? null
-   : postgres(url, { max: 10 });
-
 export const db: DbInstance =
    globalForDb.db ??
-   drizzle(client!, { schema });
+   drizzle(postgres(url, { max: 10 }), { schema });
 
 if (process.env.NODE_ENV !== 'production') {
    globalForDb.db = db;

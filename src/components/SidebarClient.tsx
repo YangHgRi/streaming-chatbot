@@ -12,6 +12,61 @@ interface SidebarClientProps {
    deleteChatAction: (chatId: string) => Promise<void>;
 }
 
+// ─── RenameInput ───────────────────────────────────────────────────────────────
+// N3 fix: isCancellingRenameRef lives inside this per-chat component so that
+// concurrent blur events from different chat rows never share the same flag.
+// Each mounted RenameInput owns exactly one ref — no cross-row interference.
+function RenameInput({
+   chatId,
+   defaultTitle,
+   renameChatAction,
+   onDone,
+}: {
+   chatId: string;
+   defaultTitle: string;
+   renameChatAction: (chatId: string, formData: FormData) => Promise<void>;
+   onDone: () => void;
+}) {
+   const isCancellingRef = useRef(false);
+
+   return (
+      <form
+         action={renameChatAction.bind(null, chatId)}
+         className="flex-1 min-w-0 px-2 py-1"
+         onSubmit={() => {
+            isCancellingRef.current = false;
+            onDone();
+         }}
+      >
+         <input
+            type="text"
+            name="title"
+            defaultValue={defaultTitle}
+            placeholder="Rename conversation…"
+            autoFocus
+            className="w-full min-w-0 text-sm text-white bg-transparent border border-gray-500 rounded px-1 py-1 focus:outline-none focus:border-blue-400"
+            onKeyDown={(e) => {
+               if (e.key === 'Escape') {
+                  // Set flag BEFORE triggering blur so the onBlur handler below
+                  // can bail out without calling requestSubmit(). React event order:
+                  // keyDown → blur → re-render; state update from onDone() fires last.
+                  isCancellingRef.current = true;
+                  onDone();
+               }
+            }}
+            onBlur={(e) => {
+               if (isCancellingRef.current) {
+                  isCancellingRef.current = false;
+                  return;
+               }
+               e.currentTarget.form?.requestSubmit();
+            }}
+         />
+      </form>
+   );
+}
+
+// ─── SidebarClient ─────────────────────────────────────────────────────────────
 export function SidebarClient({
    chats,
    createChatAction,
@@ -23,17 +78,10 @@ export function SidebarClient({
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const [isPending, startTransition] = useTransition();
 
-   // Issue #1: track whether the user pressed Escape so onBlur doesn't submit
-   // React event order: keyDown → blur → re-render.
-   // Without this flag, pressing Escape triggers blur before the state update
-   // fires, causing the form to submit with the original (unchanged) title.
-   const isCancellingRenameRef = useRef(false);
-
    return (
       <aside className="w-64 flex-shrink-0 bg-gray-900 text-white flex flex-col h-full">
          {/* Header: New Chat button */}
          <div className="p-4 border-b border-gray-700">
-            {/* Issue #9: disable the button while any server action is in flight */}
             <form action={createChatAction}>
                <button
                   type="submit"
@@ -60,42 +108,14 @@ export function SidebarClient({
                         }`}
                   >
                      {isEditing ? (
-                        /* Rename inline edit form */
-                        <form
-                           action={renameChatAction.bind(null, chat.id)}
-                           className="flex-1 min-w-0 px-2 py-1"
-                           onSubmit={() => {
-                              isCancellingRenameRef.current = false;
-                              setEditingId(null);
-                           }}
-                        >
-                           <input
-                              type="text"
-                              name="title"
-                              defaultValue={chat.title}
-                              placeholder="Rename conversation…"
-                              autoFocus
-                              className="w-full min-w-0 text-sm text-white bg-transparent border border-gray-500 rounded px-1 py-1 focus:outline-none focus:border-blue-400"
-                              onKeyDown={(e) => {
-                                 if (e.key === 'Escape') {
-                                    // Issue #1: set flag BEFORE state update so the blur
-                                    // handler that fires next can bail out without submitting
-                                    isCancellingRenameRef.current = true;
-                                    setEditingId(null);
-                                 }
-                              }}
-                              onBlur={(e) => {
-                                 // Issue #1: skip submission when Escape was pressed
-                                 if (isCancellingRenameRef.current) {
-                                    isCancellingRenameRef.current = false;
-                                    return;
-                                 }
-                                 e.currentTarget.form?.requestSubmit();
-                              }}
-                           />
-                        </form>
+                        // N3: RenameInput owns its own isCancellingRef — no shared state
+                        <RenameInput
+                           chatId={chat.id}
+                           defaultTitle={chat.title}
+                           renameChatAction={renameChatAction}
+                           onDone={() => setEditingId(null)}
+                        />
                      ) : (
-                        /* Default: title as link */
                         <Link
                            href={`/chat/${chat.id}`}
                            className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'
@@ -105,14 +125,13 @@ export function SidebarClient({
                         </Link>
                      )}
 
-                     {/* Action buttons — hover-reveal (or always visible while editing/confirming) */}
+                     {/* Action buttons — hover-reveal (or always visible while confirming) */}
                      {!isEditing && (
                         <div
                            className={`${isConfirming ? 'flex' : 'hidden group-hover:flex'
                               } items-center gap-1 pr-2 flex-shrink-0`}
                         >
                            {isConfirming ? (
-                              /* Delete confirm / cancel */
                               <>
                                  <button
                                     type="button"
@@ -133,7 +152,6 @@ export function SidebarClient({
                                  </button>
                               </>
                            ) : (
-                              /* Rename + delete icon triggers */
                               <>
                                  <button
                                     type="button"
