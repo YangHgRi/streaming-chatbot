@@ -73,6 +73,11 @@ export async function createMessage(
          .select()
          .from(messages)
          .where(eq(messages.id, data.id));
+      // U3: guard against the race where the row was deleted between the
+      // conflict and this SELECT (e.g. concurrent delete in another tab).
+      if (!existing) {
+         throw new Error(`createMessage: conflict on id=${data.id} but row no longer exists`);
+      }
       return existing;
    }
    return message;

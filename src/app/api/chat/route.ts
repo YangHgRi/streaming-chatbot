@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat } from '@/lib/db/queries';
 
@@ -75,7 +75,11 @@ export async function POST(req: Request) {
    // ── STEP 2: Convert UIMessage[] to ModelMessage[] (REQUIRED for ai@6) ────────
    // convertToModelMessages is async — must await. Passing UIMessage[] directly to
    // streamText causes TypeScript errors and runtime failures.
-   const modelMessages = await convertToModelMessages(messages);
+   // U1: messages passed Array.isArray narrowing → unknown[], not UIMessage[].
+   // Explicit cast is safe here: the SDK-assigned structure is validated above
+   // (non-empty array, role/parts checked for lastMessage). Casting lets TypeScript
+   // catch future signature changes at the call site.
+   const modelMessages = await convertToModelMessages(messages as UIMessage[]);
 
    // ── STEP 3: Stream with built-in retry (RELY-01) ──────────────────────────────
    // SDK default: maxRetries=2, exponential backoff, retries on 429/5xx/timeout only.

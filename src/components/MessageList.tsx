@@ -4,11 +4,14 @@ import type { UIMessage } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
+// U4: UIMessage.parts is non-optional in AI SDK v6 (always UIMessagePart[]).
+// Removed the unnecessary ?. optional chain and ?? '' dead-code fallback.
+// Added a proper type predicate so the inline cast inside .map() is also gone.
 function getTextContent(message: UIMessage): string {
    return message.parts
-      ?.filter((p) => p.type === 'text')
-      .map((p) => (p as { type: 'text'; text: string }).text)
-      .join('') ?? '';
+      .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join('');
 }
 
 export function MessageList({
