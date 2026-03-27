@@ -9,7 +9,15 @@ import remarkGfm from 'remark-gfm';
 // Added a proper type predicate so the inline cast inside .map() is also gone.
 function getTextContent(message: UIMessage): string {
    return message.parts
-      .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .filter((p): p is { type: 'text'; text: string } => {
+         // W7: mirror the W2 fix from route.ts — verify BOTH type === 'text' AND
+         // that text is actually a string. A predicate that only checks `type`
+         // is type-unsound: { type:'text', text: undefined } would pass the filter,
+         // be typed as string by TypeScript, then joined as the literal "undefined".
+         if (typeof p !== 'object' || p === null) return false;
+         const r = p as Record<string, unknown>;
+         return r.type === 'text' && typeof r.text === 'string';
+      })
       .map((p) => p.text)
       .join('');
 }
@@ -79,7 +87,10 @@ export function MessageList({
          {error && !isLoading && (
             <div className="flex justify-start">
                <div className="max-w-[80%] rounded-lg px-4 py-2 bg-red-50 border border-red-200 text-red-700 text-sm">
-                  {error.message || 'Something went wrong. Please try again.'}
+                  {/* W8: never expose raw error.message to users — it contains technical
+                      strings like "fetch failed", "401 Unauthorized", "429 Too Many Requests".
+                      A fixed friendly string is safe; callers who need detail can console.error. */}
+                  Something went wrong. Please try again.
                </div>
             </div>
          )}

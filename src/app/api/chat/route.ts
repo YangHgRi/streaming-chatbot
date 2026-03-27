@@ -56,8 +56,11 @@ export async function POST(req: Request) {
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
    // (PERS-02, RELY-02 — user message saved exactly once, outside retry loop)
    // The last message in the array is always the new user message for trigger=submit-message
-   const lastMessage = messages.at(-1) as Record<string, unknown> | undefined;
-   if (lastMessage?.role === 'user') {
+   // W10: messages.length > 0 is already guaranteed by the check above (line 43),
+   // so at(-1) cannot return undefined here. Drop '| undefined' from the cast
+   // and replace the downstream optional-chain with a direct property access.
+   const lastMessage = messages.at(-1) as Record<string, unknown>;
+   if (lastMessage.role === 'user') {
       // Issue #7: use explicit type guard instead of inline cast
       const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
       const content = parts

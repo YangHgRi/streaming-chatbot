@@ -40,7 +40,11 @@ export async function getChat(chatId: string): Promise<Chat | undefined> {
 
 export async function updateChat(
    chatId: string,
-   data: Partial<Pick<Chat, 'title' | 'updatedAt'>>,
+   // W9: remove 'updatedAt' from the accepted fields — the implementation always
+   // overwrites it with `new Date()`, so accepting it in the type is a lie:
+   // callers can pass updatedAt, TypeScript won't complain, but the value is
+   // silently discarded. Narrowing to only 'title' makes the contract honest.
+   data: Partial<Pick<Chat, 'title'>>,
 ): Promise<void> {
    await db
       .update(chats)
