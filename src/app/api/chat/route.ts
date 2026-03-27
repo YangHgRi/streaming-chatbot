@@ -20,6 +20,10 @@ const openai = createOpenAI({
    baseURL: process.env.OPENAI_API_BASE_URL,
 });
 
+// Resolve model name from environment variable, defaulting to 'gpt-4o-mini'.
+// Set OPENAI_MODEL in .env.local to switch models without touching code.
+const MODEL_NAME = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -120,7 +124,7 @@ export async function POST(req: Request) {
    // SDK default: maxRetries=2, exponential backoff, retries on 429/5xx/timeout only.
    // User message save above is NOT in the retry path — no duplication risk (RELY-02).
    const result = streamText({
-      model: openai('gpt-4o-mini'),
+      model: openai(MODEL_NAME),
       messages: modelMessages,
       system: 'You are a helpful assistant.',
       maxRetries: 2,
