@@ -1,7 +1,7 @@
 'use server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createChat, updateChat, deleteChat, getChats } from '@/lib/db/queries';
+import { createChat, updateChat, deleteChat, getChats, deleteMessagesFrom } from '@/lib/db/queries';
 
 // CONV-01: Create a new chat and navigate to it.
 // revalidatePath is called BEFORE redirect so the sidebar data is fresh when the
@@ -48,4 +48,16 @@ export async function deleteChatAction(chatId: string) {
       // No chats remain — let page.tsx create a fresh one
       redirect('/');
    }
+}
+
+
+// MSG-ACTION: Delete a message and everything after it in the same chat.
+// Called by both 'refresh' (caller will re-send the preceding messages)
+// and 'delete' (caller simply removes from UI).
+export async function deleteMessagesFromAction(
+   chatId: string,
+   fromMessageId: string,
+): Promise<void> {
+   await deleteMessagesFrom(chatId, fromMessageId);
+   revalidatePath(`/chat/${chatId}`);
 }

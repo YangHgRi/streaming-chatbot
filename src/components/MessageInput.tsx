@@ -1,17 +1,20 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useTransition } from 'react';
 import type { ChatStatus } from 'ai';
 
 export function MessageInput({
    onSend,
+   onNewChat,
    status,
 }: {
    onSend: (text: string) => void;
+   onNewChat: () => Promise<void>;
    status: ChatStatus;
 }) {
    const [input, setInput] = useState('');
    const isLoading = status === 'submitted' || status === 'streaming';
    const textareaRef = useRef<HTMLTextAreaElement>(null);
+   const [isCreating, startCreateTransition] = useTransition();
 
    // Issue #11: auto-grow textarea height to fit content, capped at ~8 lines
    useEffect(() => {
@@ -42,6 +45,19 @@ export function MessageInput({
 
    return (
       <form onSubmit={handleSubmit} className="border-t p-4 flex gap-2 items-end">
+         {/* New Chat button — left of textarea */}
+         <button
+            type="button"
+            disabled={isCreating}
+            onClick={() => startCreateTransition(onNewChat)}
+            title="New chat"
+            className="p-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
+         >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <line x1="12" y1="5" x2="12" y2="19" />
+               <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+         </button>
          <textarea
             ref={textareaRef}
             value={input}

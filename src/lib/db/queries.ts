@@ -6,7 +6,7 @@ import {
    type Message,
    type NewMessage,
 } from '@/lib/db/schema';
-import { eq, asc, desc } from 'drizzle-orm';
+import { eq, asc, desc, gte, and } from 'drizzle-orm';
 
 // ─── Chat CRUD ─────────────────────────────────────────────────────────────────
 
@@ -89,4 +89,28 @@ export async function createMessage(
       return existing;
    }
    return message;
+}
+
+// ─── Message deletion ─────────────────────────────────────────────────────────
+
+// Delete fromMessageId and all messages created at or after it in the same chat.
+// Used by the refresh and delete-message actions.
+export async function deleteMessagesFrom(
+   chatId: string,
+   fromMessageId: string,
+): Promise<void> {
+   // Resolve the anchor message's createdAt so we can delete it plus everything after.
+   const [anchor] = await db
+      .select({ createdAt: messages.createdAt })
+      .from(messages)
+      .where(and(eq(messages.id, fromMessageId), eq(messages.chatId, chatId)));
+   if (!anchor) return; // already gone — nothing to do
+   await db
+      .delete(messages)
+      .where(
+         and(
+            eq(messages.chatId, chatId),
+            gte(messages.createdAt, anchor.createdAt),
+         ),
+      );
 }

@@ -2,6 +2,7 @@ import type { UIMessage } from 'ai';
 import { getMessages, getChat } from '@/lib/db/queries';
 import { ChatInterface } from '@/components/ChatInterface';
 import { notFound } from 'next/navigation';
+import { createChatAction } from '@/app/actions';
 
 export default async function ChatPage({
    params,
@@ -29,12 +30,19 @@ export default async function ChatPage({
       .filter((msg): msg is typeof msg & { role: 'user' | 'assistant' } =>
          msg.role === 'user' || msg.role === 'assistant',
       )
-      .map((msg) => ({
-         id: msg.id,
-         role: msg.role,
-         parts: [{ type: 'text' as const, text: msg.content }],
-         metadata: {},
-      }));
+      .map((msg) => {
+         // PERS-05: detect persisted error sentinel and expose it via metadata
+         const isError = msg.content.startsWith('__ERROR__:');
+         const displayContent = isError
+            ? msg.content.slice('__ERROR__:'.length)
+            : msg.content;
+         return {
+            id: msg.id,
+            role: msg.role,
+            parts: [{ type: 'text' as const, text: displayContent }],
+            metadata: { isError },
+         };
+      });
 
    return (
       <div className="flex flex-col h-full bg-gray-50">
@@ -42,7 +50,7 @@ export default async function ChatPage({
             <h1 className="text-lg font-semibold text-gray-900">{chat.title}</h1>
          </header>
          <div className="flex-1 overflow-hidden">
-            <ChatInterface chatId={chatId} initialMessages={initialMessages} />
+            <ChatInterface chatId={chatId} initialMessages={initialMessages} onNewChat={createChatAction} />
          </div>
       </div>
    );

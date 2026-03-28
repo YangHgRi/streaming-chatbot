@@ -128,6 +128,22 @@ export async function POST(req: Request) {
       messages: modelMessages,
       system: 'You are a helpful assistant.',
       maxRetries: 2,
+      onError: async ({ error }) => {
+         // PERS-05: persist a sentinel error message so the error survives page
+         // reload. The '__ERROR__:' prefix lets page.tsx mark it with metadata.
+         const msg = error instanceof Error ? error.message : 'Unknown error';
+         try {
+            await createMessage({
+               id: crypto.randomUUID(),
+               chatId,
+               role: 'assistant',
+               content: `__ERROR__:${msg}`,
+            });
+            await updateChat(chatId, {});
+         } catch (persistErr) {
+            console.error('[chat] CRITICAL: Failed to persist error message:', { chatId, error: persistErr });
+         }
+      },
       onFinish: async ({ text }) => {
          // ── STEP 4: Persist assistant response after stream completes (PERS-03) ───
          // onFinish fires exactly once per successful stream.
