@@ -71,7 +71,7 @@ export function MessageInput({
             }}
             disabled={isLoading}
             placeholder="Type a message..."
-            className="flex-1 resize-none rounded-lg border border-gray-300 p-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto"
+            className="flex-1 resize-none rounded-lg border border-gray-300 p-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
             rows={1}
             style={{ maxHeight: '200px' }}
          />

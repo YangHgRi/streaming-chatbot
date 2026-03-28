@@ -2,7 +2,7 @@
 import { useChat } from '@ai-sdk/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UIMessage } from 'ai';
-import { MessageList } from './MessageList';
+import { MessageList, type PendingAction } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { deleteMessagesFromAction } from '@/app/actions';
 import { getTextContent } from '@/lib/getTextContent';
@@ -55,13 +55,12 @@ export function ChatInterface({
 
    const stopRef = useRef(stop);
    useEffect(() => { stopRef.current = stop; });
-
    useEffect(() => {
       return () => { stopRef.current(); };
       // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [chatId]);
 
-   // ─── Toast (Q2 fix: counter lives in a ref, not module-level mutable state) ──
+   // ─── Toast ────────────────────────────────────────────────────────────────
 
    const toastCounterRef = useRef(0);
    const [toasts, setToasts] = useState<Toast[]>([]);
@@ -76,106 +75,118 @@ export function ChatInterface({
       setToasts((prev) => prev.filter((t) => t.id !== id));
    }, []);
 
-   // ─── Two-step delete confirm state (Q1 fix) ────────────────────────────────
-   // confirmingDeleteId: the message id currently "armed" for deletion.
-   // First click on delete sets this; second click (while armed) fires the delete.
-   // Auto-disarms after 3 s if the user doesn't confirm.
+   // ─── Pending action (confirm popover) ────────────────────────────────────
+   // First click on refresh/delete sets pendingAction — shows the confirm popover.
+   // Clicking "确认" fires handleConfirm(); clicking "取消" or 5 s timeout cancels.
 
-   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
-   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+   // Store the actual work to do on confirm as a stable ref (avoids stale closures).
+   const pendingCallbackRef = useRef<(() => void) | null>(null);
+   const pendingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-   const armDelete = useCallback((msgId: string) => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-      setConfirmingDeleteId(msgId);
-      confirmTimerRef.current = setTimeout(() => setConfirmingDeleteId(null), 3000);
+   const requestConfirm = useCallback((action: PendingAction, callback: () => void) => {
+      // Clear any existing pending action first
+      if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+      pendingCallbackRef.current = callback;
+      setPendingAction(action);
+      // Auto-cancel after 5 s
+      pendingTimerRef.current = setTimeout(() => {
+         setPendingAction(null);
+         pendingCallbackRef.current = null;
+      }, 5000);
    }, []);
 
-   const disarmDelete = useCallback(() => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-      setConfirmingDeleteId(null);
+   const handleConfirm = useCallback(() => {
+      if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+      const cb = pendingCallbackRef.current;
+      pendingCallbackRef.current = null;
+      setPendingAction(null);
+      cb?.();
    }, []);
 
-   // Clear the timer on unmount to avoid state updates on an unmounted component.
-   useEffect(() => () => { if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current); }, []);
+   const handleCancel = useCallback(() => {
+      if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+      pendingCallbackRef.current = null;
+      setPendingAction(null);
+   }, []);
+
+   // Clear timer on unmount
+   useEffect(() => () => {
+      if (pendingTimerRef.current) clearTimeout(pendingTimerRef.current);
+   }, []);
 
    // ─── Message action handlers ───────────────────────────────────────────────
 
-   // REFRESH: truncate history before this message, re-send the last user prompt.
-   const handleRefresh = useCallback(async (msg: UIMessage) => {
-      disarmDelete();
-      const idx = messages.findIndex((m) => m.id === msg.id);
-      if (idx === -1) return;
+   // REFRESH: show confirm popover; on confirm — truncate history + re-send prompt.
+   const handleRefresh = useCallback((msg: UIMessage) => {
+      handleCancel(); // dismiss any other pending action
+      requestConfirm(
+         { messageId: msg.id, type: 'refresh' },
+         () => {
+            const idx = messages.findIndex((m) => m.id === msg.id);
+            if (idx === -1) return;
 
-      const messagesBeforeThis = messages.slice(0, idx);
+            const messagesBeforeThis = messages.slice(0, idx);
+            // R2: keep the first user message visible rather than flashing blank
+            const optimisticMessages =
+               idx === 0 && msg.role === 'user' ? [msg] : messagesBeforeThis;
 
-      // R2 fix: when refreshing the very first message (idx === 0), keep that
-      // message in view rather than flashing a blank screen. The user message
-      // acts as both the context anchor *and* the prompt.
-      const optimisticMessages =
-         idx === 0 && msg.role === 'user' ? [msg] : messagesBeforeThis;
+            const promptMsg =
+               msg.role === 'user'
+                  ? msg
+                  : [...messagesBeforeThis].reverse().find((m) => m.role === 'user');
+            if (!promptMsg) return;
 
-      // Determine the prompt to re-send.
-      // • If this is a user message: re-send it directly.
-      // • If this is an assistant message: re-send the last user message before it.
-      const promptMsg =
-         msg.role === 'user'
-            ? msg
-            : [...messagesBeforeThis].reverse().find((m) => m.role === 'user');
-      if (!promptMsg) return; // nothing to re-send (edge case: no preceding user turn)
+            const promptText = getTextContent(promptMsg);
+            if (!promptText) return;
 
-      const promptText = getTextContent(promptMsg);
-      if (!promptText) return;
+            const snapshot = messages;
+            setMessages(optimisticMessages);
 
-      // R1 fix: capture snapshot for rollback before mutating state.
-      const snapshot = messages;
-      setMessages(optimisticMessages);
+            deleteMessagesFromAction(chatId, msg.id).catch((err) => {
+               console.error('[chat] deleteMessagesFromAction failed:', err);
+               setMessages(snapshot);
+               showToast('操作失败，请重试', 'error');
+            });
 
-      deleteMessagesFromAction(chatId, msg.id).catch((err) => {
-         console.error('[chat] deleteMessagesFromAction failed:', err);
-         setMessages(snapshot); // rollback
-         showToast('操作失败，请重试', 'error');
-      });
+            sendMessage({ text: promptText });
+         },
+      );
+   }, [messages, chatId, setMessages, sendMessage, showToast, requestConfirm, handleCancel]);
 
-      sendMessage({ text: promptText });
-   }, [messages, chatId, setMessages, sendMessage, showToast, disarmDelete]);
-
-   // COPY: write text to clipboard and show a toast.
+   // COPY: immediate, no confirm needed.
    const handleCopy = useCallback(async (msg: UIMessage) => {
-      disarmDelete();
+      handleCancel();
       try {
          await navigator.clipboard.writeText(getTextContent(msg));
          showToast('已复制到剪贴板');
       } catch {
          showToast('复制失败，请手动复制', 'error');
       }
-   }, [showToast, disarmDelete]);
+   }, [showToast, handleCancel]);
 
-   // DELETE: two-step — first call arms, second call within 3 s confirms.
-   // R1 fix: snapshot + rollback on DB failure.
-   const handleDelete = useCallback(async (msg: UIMessage) => {
-      // First click: arm the confirm state and wait for a second click.
-      if (confirmingDeleteId !== msg.id) {
-         armDelete(msg.id);
-         return;
-      }
+   // DELETE: show confirm popover; on confirm — truncate history + delete from DB.
+   const handleDelete = useCallback((msg: UIMessage) => {
+      handleCancel();
+      requestConfirm(
+         { messageId: msg.id, type: 'delete' },
+         () => {
+            const idx = messages.findIndex((m) => m.id === msg.id);
+            if (idx === -1) return;
 
-      // Second click: confirmed — proceed with deletion.
-      disarmDelete();
+            const remaining = messages.slice(0, idx);
+            const snapshot = messages;
 
-      const idx = messages.findIndex((m) => m.id === msg.id);
-      if (idx === -1) return;
+            setMessages(remaining);
 
-      const remaining = messages.slice(0, idx);
-      const snapshot = messages; // R1 fix: capture for rollback
-
-      setMessages(remaining);
-
-      deleteMessagesFromAction(chatId, msg.id).catch((err) => {
-         console.error('[chat] deleteMessagesFromAction failed:', err);
-         setMessages(snapshot); // rollback
-         showToast('删除失败，请重试', 'error');
-      });
-   }, [confirmingDeleteId, messages, chatId, setMessages, armDelete, disarmDelete, showToast]);
+            deleteMessagesFromAction(chatId, msg.id).catch((err) => {
+               console.error('[chat] deleteMessagesFromAction failed:', err);
+               setMessages(snapshot);
+               showToast('删除失败，请重试', 'error');
+            });
+         },
+      );
+   }, [messages, chatId, setMessages, showToast, requestConfirm, handleCancel]);
 
    // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -188,7 +199,9 @@ export function ChatInterface({
             onRefresh={handleRefresh}
             onCopy={handleCopy}
             onDelete={handleDelete}
-            confirmingDeleteId={confirmingDeleteId}
+            pendingAction={pendingAction}
+            onConfirm={handleConfirm}
+            onCancel={handleCancel}
          />
          <MessageInput
             onSend={(text) => sendMessage({ text })}
