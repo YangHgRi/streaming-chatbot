@@ -192,16 +192,21 @@ export async function POST(req: Request) {
             });
 
             // TITLE-01: auto-title — fire once per chat, guarded by the `titled` flag.
-            // Using a dedicated boolean avoids fragile string comparisons against the
-            // default title value (which may change, or be reused by the user).
+            // Compatibility layer: if `titled` is false but the chat already has a
+            // real title (e.g. legacy rows where migration 0002 hasn't run yet, or a
+            // concurrent write), treat it as already titled and self-heal the flag.
             const freshChat = await getChat(chatId);
-            if (!freshChat?.titled) {
+            const alreadyHasTitle =
+               freshChat?.title && freshChat.title !== 'New Chat';
+            if (!freshChat?.titled && !alreadyHasTitle) {
+               // First message of a brand-new chat: generate title via LLM
                const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
                const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
                const title = rawText ? await generateChatTitle(rawText) : undefined;
                await updateChat(chatId, title ? { title, titled: true } : { titled: true });
             } else {
-               await updateChat(chatId, {});
+               // Either already titled, or legacy row with real title: ensure flag is set
+               await updateChat(chatId, freshChat?.titled ? {} : { titled: true });
             }
          } catch (err) {
             // Silent DB failures are unacceptable — log explicitly
