@@ -1,4 +1,5 @@
 import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai';
+import { after } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
 import { getTextContent } from '@/lib/getTextContent';
@@ -190,24 +191,7 @@ export async function POST(req: Request) {
                role: 'assistant',
                content: text,
             });
-
-            // TITLE-01: auto-title — fire once per chat, guarded by the `titled` flag.
-            // Compatibility layer: if `titled` is false but the chat already has a
-            // real title (e.g. legacy rows where migration 0002 hasn't run yet, or a
-            // concurrent write), treat it as already titled and self-heal the flag.
-            const freshChat = await getChat(chatId);
-            const alreadyHasTitle =
-               freshChat?.title && freshChat.title !== 'New Chat';
-            if (!freshChat?.titled && !alreadyHasTitle) {
-               // First message of a brand-new chat: generate title via LLM
-               const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
-               const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
-               const title = rawText ? await generateChatTitle(rawText) : undefined;
-               await updateChat(chatId, title ? { title, titled: true } : { titled: true });
-            } else {
-               // Either already titled, or legacy row with real title: ensure flag is set
-               await updateChat(chatId, freshChat?.titled ? {} : { titled: true });
-            }
+            await updateChat(chatId, {});
          } catch (err) {
             // Silent DB failures are unacceptable — log explicitly
             console.error('[chat] CRITICAL: Failed to persist assistant message:', {
@@ -215,7 +199,32 @@ export async function POST(req: Request) {
                textLength: text.length,
                error: err,
             });
+            return;
          }
+
+         // TITLE-01: auto-title — runs *after* the response is fully sent.
+         // Registered with after() so Next.js keeps the process alive until
+         // generateChatTitle (a new LLM network request) completes.
+         // Without after(), the runtime may terminate before the call finishes.
+         after(async () => {
+            try {
+               // TITLE-02: guard — fire once per chat via the `titled` flag.
+               // Compatibility: if titled=false but title is already real (legacy
+               // row or concurrent write), self-heal the flag and skip naming.
+               const freshChat = await getChat(chatId);
+               const alreadyHasTitle = freshChat?.title && freshChat.title !== 'New Chat';
+               if (!freshChat?.titled && !alreadyHasTitle) {
+                  const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
+                  const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
+                  const title = rawText ? await generateChatTitle(rawText) : undefined;
+                  await updateChat(chatId, title ? { title, titled: true } : { titled: true });
+               } else {
+                  if (!freshChat?.titled) await updateChat(chatId, { titled: true });
+               }
+            } catch (err) {
+               console.error('[chat] Title generation error:', { chatId, error: err });
+            }
+         });
       },
    });
 
