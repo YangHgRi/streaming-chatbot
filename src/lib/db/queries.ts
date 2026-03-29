@@ -14,7 +14,7 @@ export async function createChat(id?: string): Promise<Chat> {
    const chatId = id ?? crypto.randomUUID();
    const [chat] = await db
       .insert(chats)
-      .values({ id: chatId, title: 'New Chat' })
+      .values({ id: chatId, title: 'New Chat', titled: false })
       .returning();
    // W5: returning() yields an empty array only if the INSERT produces no rows,
    // which cannot happen here (no onConflictDoNothing). Guard anyway for type
@@ -44,7 +44,7 @@ export async function updateChat(
    // overwrites it with `new Date()`, so accepting it in the type is a lie:
    // callers can pass updatedAt, TypeScript won't complain, but the value is
    // silently discarded. Narrowing to only 'title' makes the contract honest.
-   data: Partial<Pick<Chat, 'title'>>,
+   data: Partial<Pick<Chat, 'title' | 'titled'>>,
 ): Promise<void> {
    await db
       .update(chats)

@@ -1,13 +1,20 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1774361290386,
-      "tag": "0000_purple_stephen_strange",
-      "breakpoints": true
-    }
-  ]
+   "version": "7",
+   "dialect": "postgresql",
+   "entries": [
+      {
+         "idx": 0,
+         "version": "7",
+         "when": 1774361290386,
+         "tag": "0000_purple_stephen_strange",
+         "breakpoints": true
+      },
+      {
+         "idx": 1,
+         "version": "7",
+         "when": 1774361290387,
+         "tag": "0001_add_titled_column",
+         "breakpoints": true
+      }
+   ]
 }

@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, type UIMessage } from 'ai';
+import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
 import { getTextContent } from '@/lib/getTextContent';
@@ -24,6 +24,39 @@ const openai = createOpenAI({
 // Resolve model name from environment variable, defaulting to 'gpt-4o-mini'.
 // Set OPENAI_MODEL in .env.local to switch models without touching code.
 const MODEL_NAME = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+
+// TITLE-01: Maximum character length for auto-generated chat titles.
+// Titles longer than this are hard-truncated as a safety fallback.
+const TITLE_MAX_LEN = 20;
+
+// TITLE-02: Use the LLM to generate a concise title from the first user message.
+// Falls back to plain truncation if the LLM call fails or returns an oversized string.
+async function generateChatTitle(firstUserText: string): Promise<string> {
+   const prompt =
+      `Summarize the following message into a chat title.\n` +
+      `Rules:\n` +
+      `- Maximum ${TITLE_MAX_LEN} characters (strictly enforced — count carefully)\n` +
+      `- Match the language of the message\n` +
+      `- No quotation marks, no punctuation at the end\n` +
+      `- Output the title only, nothing else\n\n` +
+      `Message: ${firstUserText.slice(0, 500)}`;
+   try {
+      const { text } = await generateText({
+         model: openai(MODEL_NAME),
+         prompt,
+         maxRetries: 1,
+      });
+      const candidate = text.trim().replace(/^["']|["']$/g, '');
+      // Hard-truncate as safety net in case the model ignores the length rule
+      return candidate.length <= TITLE_MAX_LEN ? candidate : candidate.slice(0, TITLE_MAX_LEN);
+   } catch (err) {
+      console.warn('[chat] Title generation failed, falling back to truncation:', err);
+      // Fallback: simple truncation of the raw user text
+      return firstUserText.length <= TITLE_MAX_LEN
+         ? firstUserText
+         : firstUserText.slice(0, TITLE_MAX_LEN);
+   }
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -158,24 +191,15 @@ export async function POST(req: Request) {
                content: text,
             });
 
-            // Issue #2: update updatedAt so getChats() sorts this chat to the top.
-            // PLSH-05: auto-title — if the chat still has the default title, derive
-            // a title from the first user message (truncated to 50 chars).
+            // TITLE-01: auto-title — fire once per chat, guarded by the `titled` flag.
+            // Using a dedicated boolean avoids fragile string comparisons against the
+            // default title value (which may change, or be reused by the user).
             const freshChat = await getChat(chatId);
-            if (freshChat?.title === 'New Chat') {
+            if (!freshChat?.titled) {
                const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
-               if (firstUserMsg) {
-                  // PLSH-05: reuse getTextContent for consistent text extraction
-                  const trimmed = getTextContent(firstUserMsg).trim();
-                  if (trimmed) {
-                     const title = trimmed.length > 50 ? trimmed.slice(0, 50) + '…' : trimmed;
-                     await updateChat(chatId, { title });
-                  } else {
-                     await updateChat(chatId, {});
-                  }
-               } else {
-                  await updateChat(chatId, {});
-               }
+               const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
+               const title = rawText ? await generateChatTitle(rawText) : undefined;
+               await updateChat(chatId, title ? { title, titled: true } : { titled: true });
             } else {
                await updateChat(chatId, {});
             }
