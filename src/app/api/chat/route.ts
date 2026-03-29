@@ -1,6 +1,7 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
+import { getTextContent } from '@/lib/getTextContent';
 
 // W4: validate OPENAI_API_KEY at module load — gives a clear error message in dev
 // instead of a cryptic 401 / SDK exception on the first request.
@@ -157,8 +158,27 @@ export async function POST(req: Request) {
                content: text,
             });
 
-            // Issue #2: update updatedAt so getChats() sorts this chat to the top
-            await updateChat(chatId, {});
+            // Issue #2: update updatedAt so getChats() sorts this chat to the top.
+            // PLSH-05: auto-title — if the chat still has the default title, derive
+            // a title from the first user message (truncated to 50 chars).
+            const freshChat = await getChat(chatId);
+            if (freshChat?.title === 'New Chat') {
+               const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
+               if (firstUserMsg) {
+                  // PLSH-05: reuse getTextContent for consistent text extraction
+                  const trimmed = getTextContent(firstUserMsg).trim();
+                  if (trimmed) {
+                     const title = trimmed.length > 50 ? trimmed.slice(0, 50) + '…' : trimmed;
+                     await updateChat(chatId, { title });
+                  } else {
+                     await updateChat(chatId, {});
+                  }
+               } else {
+                  await updateChat(chatId, {});
+               }
+            } else {
+               await updateChat(chatId, {});
+            }
          } catch (err) {
             // Silent DB failures are unacceptable — log explicitly
             console.error('[chat] CRITICAL: Failed to persist assistant message:', {

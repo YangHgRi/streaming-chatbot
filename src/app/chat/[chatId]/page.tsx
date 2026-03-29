@@ -3,6 +3,7 @@ import { getMessages, getChat } from '@/lib/db/queries';
 import { ChatInterface } from '@/components/ChatInterface';
 import { notFound } from 'next/navigation';
 import { createChatAction } from '@/app/actions';
+import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
 
 export default async function ChatPage({
    params,
@@ -46,8 +47,10 @@ export default async function ChatPage({
 
    return (
       <div className="flex flex-col h-full bg-gray-50">
-         <header className="border-b border-gray-200 bg-white px-6 py-4 flex-shrink-0">
-            <h1 className="text-lg font-semibold text-gray-900">{chat.title}</h1>
+         <header className="border-b border-gray-200 bg-white px-4 py-4 flex-shrink-0 flex items-center gap-3">
+            {/* Mobile hamburger — hidden on md+ (sidebar always visible there) */}
+            <MobileSidebarToggle />
+            <h1 className="text-lg font-semibold text-gray-900 truncate" title={chat.title}>{chat.title}</h1>
          </header>
          <div className="flex-1 overflow-hidden">
             <ChatInterface chatId={chatId} initialMessages={initialMessages} onNewChat={createChatAction} />

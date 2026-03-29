@@ -9,6 +9,8 @@ import { getTextContent } from '@/lib/getTextContent';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
+const MAX_TOASTS = 3;
+
 interface Toast {
    id: number;
    message: string;
@@ -17,7 +19,7 @@ interface Toast {
 
 function ToastContainer({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: number) => void }) {
    return (
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-50 pointer-events-none">
+      <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 flex flex-col gap-2 z-50 pointer-events-none">
          {toasts.map((t) => (
             <div
                key={t.id}
@@ -57,7 +59,6 @@ export function ChatInterface({
    useEffect(() => { stopRef.current = stop; });
    useEffect(() => {
       return () => { stopRef.current(); };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [chatId]);
 
    // ─── Toast ────────────────────────────────────────────────────────────────
@@ -67,7 +68,11 @@ export function ChatInterface({
 
    const showToast = useCallback((message: string, type: Toast['type'] = 'success') => {
       const id = ++toastCounterRef.current;
-      setToasts((prev) => [...prev, { id, message, type }]);
+      setToasts((prev) => {
+         // Limit to MAX_TOASTS — drop the oldest if needed
+         const trimmed = prev.length >= MAX_TOASTS ? prev.slice(prev.length - MAX_TOASTS + 1) : prev;
+         return [...trimmed, { id, message, type }];
+      });
       setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
    }, []);
 
@@ -77,7 +82,7 @@ export function ChatInterface({
 
    // ─── Pending action (confirm popover) ────────────────────────────────────
    // First click on refresh/delete sets pendingAction — shows the confirm popover.
-   // Clicking "确认" fires handleConfirm(); clicking "取消" or 5 s timeout cancels.
+   // Clicking "Confirm" fires handleConfirm(); clicking "Cancel" or 5 s timeout cancels.
 
    const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
    // Store the actual work to do on confirm as a stable ref (avoids stale closures).
@@ -146,7 +151,7 @@ export function ChatInterface({
             deleteMessagesFromAction(chatId, msg.id).catch((err) => {
                console.error('[chat] deleteMessagesFromAction failed:', err);
                setMessages(snapshot);
-               showToast('操作失败，请重试', 'error');
+               showToast('Action failed. Please try again.', 'error');
             });
 
             sendMessage({ text: promptText });
@@ -159,9 +164,9 @@ export function ChatInterface({
       handleCancel();
       try {
          await navigator.clipboard.writeText(getTextContent(msg));
-         showToast('已复制到剪贴板');
+         showToast('Copied to clipboard');
       } catch {
-         showToast('复制失败，请手动复制', 'error');
+         showToast('Copy failed. Please copy manually.', 'error');
       }
    }, [showToast, handleCancel]);
 
@@ -182,11 +187,17 @@ export function ChatInterface({
             deleteMessagesFromAction(chatId, msg.id).catch((err) => {
                console.error('[chat] deleteMessagesFromAction failed:', err);
                setMessages(snapshot);
-               showToast('删除失败，请重试', 'error');
+               showToast('Delete failed. Please try again.', 'error');
             });
          },
       );
    }, [messages, chatId, setMessages, showToast, requestConfirm, handleCancel]);
+
+   // ─── Send handler (also used by EmptyState suggestion chips) ──────────────
+
+   const handleSend = useCallback((text: string) => {
+      sendMessage({ text });
+   }, [sendMessage]);
 
    // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -202,10 +213,12 @@ export function ChatInterface({
             pendingAction={pendingAction}
             onConfirm={handleConfirm}
             onCancel={handleCancel}
+            onSend={handleSend}
          />
          <MessageInput
             onSend={(text) => sendMessage({ text })}
             onNewChat={onNewChat}
+            onStop={stop}
             status={status}
          />
          <ToastContainer toasts={toasts} onDismiss={dismissToast} />

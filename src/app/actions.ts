@@ -7,15 +7,21 @@ import { createChat, updateChat, deleteChat, getChats, deleteMessagesFrom } from
 // revalidatePath is called BEFORE redirect so the sidebar data is fresh when the
 // redirected page renders (Router Cache is busted before the new URL loads).
 export async function createChatAction() {
-   const chat = await createChat();
+   let chatId: string;
+   try {
+      const chat = await createChat();
+      chatId = chat.id;
+   } catch {
+      throw new Error('Failed to create chat. Please try again.');
+   }
    revalidatePath('/', 'layout');
-   redirect(`/chat/${chat.id}`);
+   redirect(`/chat/${chatId}`);
 }
 
 // CONV-04: Rename a conversation.
 // chatId is pre-bound via .bind(null, chat.id) in SidebarClient's form action.
 // formData carries the 'title' input field value.
-// Guard: returns early on blank/whitespace — prevents saving empty titles.
+// Guard: returns error on blank/whitespace — prevents saving empty titles.
 // No redirect — user stays on the current chat; sidebar title updates via revalidatePath.
 export async function renameChatAction(chatId: string, formData: FormData) {
    // W3: FormData.get() returns string | File | null.
@@ -23,8 +29,14 @@ export async function renameChatAction(chatId: string, formData: FormData) {
    // the same name were submitted, .trim() would throw TypeError at runtime.
    // A typeof guard narrows to string safely before any further operations.
    const raw = formData.get('title');
-   if (typeof raw !== 'string' || !raw.trim()) return;
-   await updateChat(chatId, { title: raw.trim() });
+   if (typeof raw !== 'string' || !raw.trim()) {
+      throw new Error('Title cannot be empty.');
+   }
+   try {
+      await updateChat(chatId, { title: raw.trim() });
+   } catch {
+      throw new Error('Failed to rename chat. Please try again.');
+   }
    revalidatePath('/', 'layout');
 }
 
@@ -35,15 +47,19 @@ export async function renameChatAction(chatId: string, formData: FormData) {
 // N5 fix: redirect to the next available chat instead of always going to '/';
 // navigating to '/' would create a fresh empty chat even when others still exist.
 export async function deleteChatAction(chatId: string) {
-   // Fetch the chat list BEFORE deleting so we can find a sibling to redirect to
-   const allChats = await getChats();
-   const nextChat = allChats.find((c) => c.id !== chatId);
-
-   await deleteChat(chatId);
+   let nextChatId: string | undefined;
+   try {
+      // Fetch the chat list BEFORE deleting so we can find a sibling to redirect to
+      const allChats = await getChats();
+      const nextChat = allChats.find((c) => c.id !== chatId);
+      nextChatId = nextChat?.id;
+      await deleteChat(chatId);
+   } catch {
+      throw new Error('Failed to delete chat. Please try again.');
+   }
    revalidatePath('/', 'layout');
-
-   if (nextChat) {
-      redirect(`/chat/${nextChat.id}`);
+   if (nextChatId) {
+      redirect(`/chat/${nextChatId}`);
    } else {
       // No chats remain — let page.tsx create a fresh one
       redirect('/');
@@ -58,6 +74,12 @@ export async function deleteMessagesFromAction(
    chatId: string,
    fromMessageId: string,
 ): Promise<void> {
-   await deleteMessagesFrom(chatId, fromMessageId);
+   try {
+      await deleteMessagesFrom(chatId, fromMessageId);
+   } catch (err) {
+      throw new Error(
+         `Failed to delete messages: ${err instanceof Error ? err.message : String(err)}`,
+      );
+   }
    revalidatePath(`/chat/${chatId}`);
 }

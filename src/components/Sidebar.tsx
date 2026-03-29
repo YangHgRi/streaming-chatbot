@@ -4,19 +4,25 @@
 import { getChats } from '@/lib/db/queries';
 import { SidebarClient } from './SidebarClient';
 import {
-  createChatAction,
-  renameChatAction,
-  deleteChatAction,
+   createChatAction,
+   renameChatAction,
+   deleteChatAction,
 } from '@/app/actions';
 
 export async function Sidebar() {
-  const chats = await getChats();
-  return (
-    <SidebarClient
-      chats={chats}
-      createChatAction={createChatAction}
-      renameChatAction={renameChatAction}
-      deleteChatAction={deleteChatAction}
-    />
-  );
+   let chats: Awaited<ReturnType<typeof getChats>> = [];
+   try {
+      chats = await getChats();
+   } catch (err) {
+      console.error('[Sidebar] Failed to load chats:', err);
+      // Render with empty list rather than crashing the whole layout
+   }
+   return (
+      <SidebarClient
+         chats={chats}
+         createChatAction={createChatAction}
+         renameChatAction={renameChatAction}
+         deleteChatAction={deleteChatAction}
+      />
+   );
 }

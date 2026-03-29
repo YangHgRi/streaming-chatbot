@@ -1,9 +1,10 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { UIMessage } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getTextContent } from '@/lib/getTextContent';
+import { CodeBlock } from './CodeBlock';
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -118,7 +119,7 @@ function StandaloneThinkingBlock() {
                   <IconBrain size={14} />
                </span>
                <span className="text-xs font-medium text-gray-400 animate-thinking tracking-wide">
-                  思考中…
+                  Thinking…
                </span>
             </div>
             <ThinkingLines />
@@ -153,7 +154,7 @@ function ThinkingPill({
                <IconBrain size={13} />
             </span>
             <span className={`text-xs font-medium text-gray-400 flex-1 tracking-wide ${isStreaming ? 'animate-thinking' : ''}`}>
-               {isStreaming ? '思考中…' : '已完成思考'}
+               {isStreaming ? 'Thinking…' : 'Done thinking'}
             </span>
             <span className="text-gray-300">
                {expanded ? <IconChevronUp /> : <IconChevronDown />}
@@ -167,7 +168,7 @@ function ThinkingPill({
                   <ThinkingLines />
                ) : (
                   <p className="text-xs text-gray-400 italic select-none">
-                     AI 已完成思考过程，答案显示在下方。
+                     AI has finished reasoning. Answer shown below.
                   </p>
                )}
             </div>
@@ -195,7 +196,7 @@ function ConfirmPopover({
       <div className={`flex items-center gap-2 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs shadow-sm bg-white border-gray-200">
             <span className="text-gray-600 font-medium">
-               {isDelete ? '删除该消息及之后的所有对话？' : '重新生成该回复？'}
+               {isDelete ? 'Delete this and all following messages?' : 'Regenerate this response?'}
             </span>
             <button
                type="button"
@@ -203,14 +204,14 @@ function ConfirmPopover({
                className={`px-2 py-0.5 rounded text-white text-xs font-medium transition-colors ${isDelete ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'
                   }`}
             >
-               确认
+               Confirm
             </button>
             <button
                type="button"
                onClick={onCancel}
                className="px-2 py-0.5 rounded text-gray-500 hover:bg-gray-100 text-xs font-medium transition-colors"
             >
-               取消
+               Cancel
             </button>
          </div>
       </div>
@@ -237,21 +238,21 @@ function MessageActions({
       <div className={`flex items-center gap-0.5 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
          <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-md shadow-sm px-0.5 py-0.5">
             <ActionButton
-               label="重新生成"
+               label="Regenerate"
                onClick={() => onRefresh(message)}
                className="text-gray-400 hover:text-blue-600 hover:bg-blue-50"
             >
                <IconRefresh />
             </ActionButton>
             <ActionButton
-               label="复制"
+               label="Copy"
                onClick={() => onCopy(message)}
                className="text-gray-400 hover:text-green-600 hover:bg-green-50"
             >
                <IconCopy />
             </ActionButton>
             <ActionButton
-               label="删除"
+               label="Delete"
                onClick={() => onDelete(message)}
                className="text-gray-400 hover:text-red-600 hover:bg-red-50"
             >
@@ -285,6 +286,45 @@ function ActionButton({
    );
 }
 
+// ─── EmptyState ───────────────────────────────────────────────────────────────
+// Shown when there are no messages and the chat is not loading.
+
+const SUGGESTIONS = [
+   'Explain quantum computing in simple terms',
+   'Write a hello world in Python',
+   'What are the benefits of TypeScript?',
+];
+
+function EmptyState({ onSend }: { onSend: (text: string) => void }) {
+   return (
+      <div className="flex flex-col items-center justify-center h-full gap-6 px-4 text-center select-none">
+         {/* Logo / icon */}
+         <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+               fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+         </div>
+         <div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-1">How can I help you?</h2>
+            <p className="text-sm text-gray-500">Start a conversation or try one of these suggestions</p>
+         </div>
+         <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+            {SUGGESTIONS.map((s) => (
+               <button
+                  key={s}
+                  type="button"
+                  onClick={() => onSend(s)}
+                  className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+               >
+                  {s}
+               </button>
+            ))}
+         </div>
+      </div>
+   );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PendingAction {
@@ -304,6 +344,7 @@ export function MessageList({
    pendingAction,
    onConfirm,
    onCancel,
+   onSend,
 }: {
    messages: UIMessage[];
    isLoading: boolean;
@@ -314,12 +355,51 @@ export function MessageList({
    pendingAction: PendingAction | null;
    onConfirm: () => void;
    onCancel: () => void;
+   onSend: (text: string) => void;
 }) {
+   const scrollContainerRef = useRef<HTMLDivElement>(null);
    const bottomRef = useRef<HTMLDivElement>(null);
+   const [isNearBottom, setIsNearBottom] = useState(true);
+   const [showScrollBtn, setShowScrollBtn] = useState(false);
+   const rafRef = useRef<number | null>(null);
 
+   // ── Smart auto-scroll ──────────────────────────────────────────────────────
+   // Only scroll to bottom if the user was already near the bottom.
+
+   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+      bottomRef.current?.scrollIntoView({ behavior });
+   }, []);
+
+   // Track if user is near bottom
+   const handleScroll = useCallback(() => {
+      if (rafRef.current !== null) return;
+      rafRef.current = requestAnimationFrame(() => {
+         rafRef.current = null;
+         const el = scrollContainerRef.current;
+         if (!el) return;
+         const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+         const nearBottom = distFromBottom < 150;
+         setIsNearBottom(nearBottom);
+         setShowScrollBtn(!nearBottom);
+      });
+   }, []);
+
+   // Auto-scroll when new messages arrive — only if near bottom
    useEffect(() => {
-      bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      if (isNearBottom) {
+         scrollToBottom('smooth');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
    }, [messages, isLoading]);
+
+   // On first load (empty → messages), jump instantly without animation
+   const prevLengthRef = useRef(messages.length);
+   useEffect(() => {
+      if (prevLengthRef.current === 0 && messages.length > 0) {
+         scrollToBottom('instant' as ScrollBehavior);
+      }
+      prevLengthRef.current = messages.length;
+   }, [messages.length, scrollToBottom]);
 
    const lastMessageId = messages.at(-1)?.id;
 
@@ -392,8 +472,17 @@ export function MessageList({
    const isThinkingPhase =
       isLoading && (messages.length === 0 || messages.at(-1)?.role === 'user');
 
+   const showEmptyState = messages.length === 0 && !isLoading;
+
    return (
-      <div className="flex-1 overflow-y-auto p-4">
+      <div
+         ref={scrollContainerRef}
+         onScroll={handleScroll}
+         className="flex-1 overflow-y-auto p-4 relative"
+      >
+         {/* Empty state */}
+         {showEmptyState && <EmptyState onSend={onSend} />}
+
          {messages.map((message) => {
             const isUser = message.role === 'user';
             const isError = (message.metadata as Record<string, unknown>)?.isError;
@@ -413,7 +502,7 @@ export function MessageList({
                   className={`group mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                >
                   {/* Pill + bubble wrapped together so they share the same width */}
-                  <div className="w-40 flex flex-col">
+                  <div className={`flex flex-col ${isUser ? 'max-w-[75%]' : 'max-w-[85%]'}`}>
                      {hasThinkingPill && (
                         <div className="w-0 min-w-full">
                            <ThinkingPill
@@ -437,7 +526,24 @@ export function MessageList({
                            <span className="text-sm">Something went wrong. Please try again.</span>
                         ) : message.role === 'assistant' ? (
                            <div className="prose prose-sm max-w-none">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              <ReactMarkdown
+                                 remarkPlugins={[remarkGfm]}
+                                 components={{
+                                    code({ className, children, ...rest }) {
+                                       // Determine if inline by checking for language class
+                                       const hasLang = /language-\w+/.test(className ?? '');
+                                       return (
+                                          <CodeBlock
+                                             inline={!hasLang}
+                                             className={className}
+                                             {...rest}
+                                          >
+                                             {children}
+                                          </CodeBlock>
+                                       );
+                                    },
+                                 }}
+                              >
                                  {getTextContent(message)}
                               </ReactMarkdown>
                            </div>
@@ -486,6 +592,18 @@ export function MessageList({
          )}
 
          <div ref={bottomRef} />
+
+         {/* Scroll-to-bottom FAB */}
+         {showScrollBtn && (
+            <button
+               type="button"
+               onClick={() => scrollToBottom('smooth')}
+               aria-label="Scroll to bottom"
+               className="fixed bottom-28 sm:bottom-24 right-6 z-20 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all animate-fade-in"
+            >
+               <IconChevronDown size={16} />
+            </button>
+         )}
       </div>
    );
 }
