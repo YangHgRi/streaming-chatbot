@@ -44,3 +44,37 @@ body {
       animation: fade-in 0.18s ease-out both;
    }
 }
+
+
+@keyframes thinking-shimmer {
+
+   0%,
+   100% {
+      opacity: 0.35;
+   }
+
+   50% {
+      opacity: 0.7;
+   }
+}
+
+@layer utilities {
+   .animate-thinking {
+      animation: thinking-shimmer 1.6s ease-in-out infinite;
+   }
+
+   .animate-thinking-delay-1 {
+      animation: thinking-shimmer 1.6s ease-in-out infinite;
+      animation-delay: 0.2s;
+   }
+
+   .animate-thinking-delay-2 {
+      animation: thinking-shimmer 1.6s ease-in-out infinite;
+      animation-delay: 0.4s;
+   }
+
+   .animate-thinking-delay-3 {
+      animation: thinking-shimmer 1.6s ease-in-out infinite;
+      animation-delay: 0.6s;
+   }
+}

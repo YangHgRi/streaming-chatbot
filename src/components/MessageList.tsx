@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { UIMessage } from 'ai';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -40,6 +40,139 @@ function IconTrash() {
          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
       </svg>
+   );
+}
+
+function IconChevronDown({ size = 12 }: { size?: number }) {
+   return (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="2.5"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+         <path d="m6 9 6 6 6-6" />
+      </svg>
+   );
+}
+
+function IconChevronUp({ size = 12 }: { size?: number }) {
+   return (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="2.5"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+         <path d="m18 15-6-6-6 6" />
+      </svg>
+   );
+}
+
+function IconBrain({ size = 13 }: { size?: number }) {
+   return (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="1.8"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+         <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z" />
+         <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z" />
+         <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4" />
+         <path d="M17.599 6.5a3 3 0 0 0 .399-1.375" />
+         <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5" />
+         <path d="M3.477 10.896a4 4 0 0 1 .585-.396" />
+         <path d="M19.938 10.5a4 4 0 0 1 .585.396" />
+         <path d="M6 18a4 4 0 0 1-1.967-.516" />
+         <path d="M19.967 17.484A4 4 0 0 1 18 18" />
+      </svg>
+   );
+}
+
+// ─── ThinkingLines ────────────────────────────────────────────────────────────
+// Renders blurred / ghost text lines to simulate "thinking" content.
+
+const THINKING_LINES = [
+   { w: 'w-4/5', delay: 'animate-thinking' },
+   { w: 'w-3/5', delay: 'animate-thinking-delay-1' },
+   { w: 'w-2/3', delay: 'animate-thinking-delay-2' },
+   { w: 'w-1/2', delay: 'animate-thinking-delay-3' },
+   { w: 'w-3/4', delay: 'animate-thinking' },
+];
+
+function ThinkingLines() {
+   return (
+      <div className="flex flex-col gap-2 py-0.5">
+         {THINKING_LINES.map((line, i) => (
+            <div
+               key={i}
+               className={`h-3 rounded-full bg-gray-300 blur-[2px] ${line.w} ${line.delay}`}
+            />
+         ))}
+      </div>
+   );
+}
+
+// ─── StandaloneThinkingBlock ──────────────────────────────────────────────────
+// Floating block shown during "submitted" phase (no assistant message yet).
+
+function StandaloneThinkingBlock() {
+   return (
+      <div className="mb-2 flex justify-start animate-fade-in">
+         <div className="max-w-[80%] rounded-lg px-4 py-3 bg-white border border-gray-200">
+            {/* Header */}
+            <div className="flex items-center gap-1.5 mb-3">
+               <span className="text-gray-400 animate-thinking">
+                  <IconBrain size={14} />
+               </span>
+               <span className="text-xs font-medium text-gray-400 animate-thinking tracking-wide">
+                  思考中…
+               </span>
+            </div>
+            <ThinkingLines />
+         </div>
+      </div>
+   );
+}
+
+// ─── ThinkingPill ─────────────────────────────────────────────────────────────
+// Collapsed/expanded pill shown above an assistant bubble that went through
+// the thinking phase.  During streaming it shows animated lines; after
+// streaming it collapses by default and can be toggled.
+
+function ThinkingPill({
+   isStreaming,
+   expanded,
+   onToggle,
+}: {
+   isStreaming: boolean;
+   expanded: boolean;
+   onToggle: () => void;
+}) {
+   return (
+      <div className="w-full rounded-lg border border-gray-200 bg-white overflow-hidden mb-1 animate-fade-in">
+         {/* Pill header — always visible */}
+         <button
+            type="button"
+            onClick={onToggle}
+            className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+         >
+            <span className={`text-gray-400 ${isStreaming ? 'animate-thinking' : ''}`}>
+               <IconBrain size={13} />
+            </span>
+            <span className={`text-xs font-medium text-gray-400 flex-1 tracking-wide ${isStreaming ? 'animate-thinking' : ''}`}>
+               {isStreaming ? '思考中…' : '已完成思考'}
+            </span>
+            <span className="text-gray-300">
+               {expanded ? <IconChevronUp /> : <IconChevronDown />}
+            </span>
+         </button>
+
+         {/* Expanded content */}
+         {expanded && (
+            <div className="w-0 min-w-full px-3 pb-3 pt-0.5 border-t border-gray-100 overflow-hidden">
+               {isStreaming ? (
+                  <ThinkingLines />
+               ) : (
+                  <p className="text-xs text-gray-400 italic select-none">
+                     AI 已完成思考过程，答案显示在下方。
+                  </p>
+               )}
+            </div>
+         )}
+      </div>
    );
 }
 
@@ -190,6 +323,75 @@ export function MessageList({
 
    const lastMessageId = messages.at(-1)?.id;
 
+   // ── Thinking-pill tracking ────────────────────────────────────────────────
+   // When `status` transitions from 'submitted' → 'streaming', the first
+   // assistant message appears.  We record its id so we can show a thinking
+   // pill above it even after streaming completes.
+   //
+   // thinkingIds  – set of assistant message ids that had a thinking phase
+   // expandedIds  – set of those ids whose pill is currently expanded
+   const [thinkingIds, setThinkingIds] = useState<Set<string>>(new Set());
+   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+   // Track the previous last-message id so we can detect the moment a new
+   // assistant message appears while we are still loading (= submitted→streaming).
+   const prevLastIdRef = useRef<string | undefined>(undefined);
+
+   useEffect(() => {
+      const currentLastId = messages.at(-1)?.id;
+      const currentLastRole = messages.at(-1)?.role;
+
+      if (
+         isLoading &&
+         currentLastRole === 'assistant' &&
+         currentLastId !== undefined &&
+         currentLastId !== prevLastIdRef.current
+      ) {
+         // A new assistant message appeared during loading → it had a thinking phase
+         setThinkingIds((prev) => new Set(prev).add(currentLastId));
+         // Start expanded so the user sees the blurred lines while streaming
+         setExpandedIds((prev) => new Set(prev).add(currentLastId));
+      }
+
+      prevLastIdRef.current = currentLastId;
+   }, [messages, isLoading]);
+
+   // When streaming ends for a message, auto-collapse the pill after a short delay
+   const prevIsLoadingRef = useRef(isLoading);
+   useEffect(() => {
+      if (prevIsLoadingRef.current && !isLoading) {
+         // Streaming just finished — collapse the pill for the last assistant message
+         const lastId = messages.at(-1)?.id;
+         if (lastId && thinkingIds.has(lastId)) {
+            const timer = setTimeout(() => {
+               setExpandedIds((prev) => {
+                  const next = new Set(prev);
+                  next.delete(lastId);
+                  return next;
+               });
+            }, 600);
+            return () => clearTimeout(timer);
+         }
+      }
+      prevIsLoadingRef.current = isLoading;
+   }, [isLoading, messages, thinkingIds]);
+
+   const togglePill = (id: string) => {
+      setExpandedIds((prev) => {
+         const next = new Set(prev);
+         if (next.has(id)) {
+            next.delete(id);
+         } else {
+            next.add(id);
+         }
+         return next;
+      });
+   };
+
+   // True when request is sent but no assistant reply exists yet
+   const isThinkingPhase =
+      isLoading && (messages.length === 0 || messages.at(-1)?.role === 'user');
+
    return (
       <div className="flex-1 overflow-y-auto p-4">
          {messages.map((message) => {
@@ -199,32 +401,50 @@ export function MessageList({
             const isLastAndStreaming = isLoading && message.id === lastMessageId;
             const hasPendingAction = pendingAction?.messageId === message.id;
 
+            // Thinking pill state for this message
+            const hasThinkingPill = !isUser && thinkingIds.has(message.id);
+            const pillExpanded = expandedIds.has(message.id);
+            const pillStreaming = isLoading && message.id === lastMessageId && hasThinkingPill;
+
             return (
                <div
                   key={message.id}
                   // `group` drives hover-based visibility of the action row
                   className={`group mb-2 flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                >
-                  {/* Bubble */}
-                  <div
-                     className={`max-w-[80%] rounded-lg px-4 py-2 ${isUser
+                  {/* Pill + bubble wrapped together so they share the same width */}
+                  <div className="w-40 flex flex-col">
+                     {hasThinkingPill && (
+                        <div className="w-0 min-w-full">
+                           <ThinkingPill
+                              isStreaming={pillStreaming}
+                              expanded={pillExpanded}
+                              onToggle={() => togglePill(message.id)}
+                           />
+                        </div>
+                     )}
+
+                     {/* Bubble */}
+                     <div
+                        className={`w-full rounded-lg px-4 py-2 ${isUser
                            ? 'bg-gray-200 text-gray-900'
                            : isError
                               ? 'bg-red-50 border border-red-200 text-red-700'
                               : 'bg-white border border-gray-200 text-gray-900'
-                        }`}
-                  >
-                     {message.role === 'assistant' && isError ? (
-                        <span className="text-sm">Something went wrong. Please try again.</span>
-                     ) : message.role === 'assistant' ? (
-                        <div className="prose prose-sm max-w-none">
-                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {getTextContent(message)}
-                           </ReactMarkdown>
-                        </div>
-                     ) : (
-                        <span className="text-sm whitespace-pre-wrap">{getTextContent(message)}</span>
-                     )}
+                           }`}
+                     >
+                        {message.role === 'assistant' && isError ? (
+                           <span className="text-sm">Something went wrong. Please try again.</span>
+                        ) : message.role === 'assistant' ? (
+                           <div className="prose prose-sm max-w-none">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                 {getTextContent(message)}
+                              </ReactMarkdown>
+                           </div>
+                        ) : (
+                           <span className="text-sm whitespace-pre-wrap">{getTextContent(message)}</span>
+                        )}
+                     </div>
                   </div>
 
                   {/* Action buttons — hidden until bubble is hovered, invisible during streaming */}
@@ -253,18 +473,8 @@ export function MessageList({
             );
          })}
 
-         {/* Streaming indicator */}
-         {isLoading && (
-            <div className="mb-2 flex justify-start">
-               <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-                  <div className="flex gap-1">
-                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                     <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
-                  </div>
-               </div>
-            </div>
-         )}
+         {/* Thinking phase indicator (submitted → no assistant message yet) */}
+         {isThinkingPhase && <StandaloneThinkingBlock />}
 
          {/* Error bubble */}
          {error && !isLoading && (
