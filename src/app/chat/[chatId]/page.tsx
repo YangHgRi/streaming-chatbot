@@ -51,7 +51,7 @@ export default async function ChatPage({
             <h1 className="text-lg font-semibold text-gray-900 truncate" title={chat.title}>{chat.title}</h1>
          </header>
          <div className="flex-1 overflow-hidden">
-            <ChatInterface chatId={chatId} initialMessages={initialMessages} onNewChat={createChatAction} />
+            <ChatInterface chatId={chatId} initialMessages={initialMessages} onNewChat={createChatAction} titled={chat.titled ?? false} />
          </div>
       </div>
    );

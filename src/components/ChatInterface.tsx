@@ -1,6 +1,7 @@
 'use client';
 import { useChat } from '@ai-sdk/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { UIMessage } from 'ai';
 import { MessageList, type PendingAction } from './MessageList';
 import { MessageInput } from './MessageInput';
@@ -45,15 +46,37 @@ export function ChatInterface({
    chatId,
    initialMessages,
    onNewChat,
+   titled,
 }: {
    chatId: string;
    initialMessages: UIMessage[];
    onNewChat: () => Promise<void>;
+   titled: boolean;
 }) {
    const { messages, sendMessage, setMessages, status, error, stop } = useChat({
       id: chatId,
       messages: initialMessages,
    });
+
+   const router = useRouter();
+
+   // After the first AI response completes on an untitled chat, call the
+   // dedicated title API and only refresh the router once it responds —
+   // guaranteeing "title written → cache invalidated → router refreshed".
+   const prevStatusRef = useRef(status);
+   useEffect(() => {
+      const prev = prevStatusRef.current;
+      prevStatusRef.current = status;
+      if (!titled && (prev === 'streaming' || prev === 'submitted') && status === 'ready') {
+         const firstUserMsg = messages.find((m) => m.role === 'user');
+         const firstUserMessage = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
+         fetch(`/api/chat/${chatId}/title`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ firstUserMessage }),
+         }).then(() => router.refresh());
+      }
+   }, [status, router, chatId, messages, titled]);
 
    const isLoading = status === 'submitted' || status === 'streaming';
 

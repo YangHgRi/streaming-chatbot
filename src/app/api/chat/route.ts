@@ -1,9 +1,7 @@
-import { streamText, generateText, convertToModelMessages, type UIMessage } from 'ai';
-import { after } from 'next/server';
+import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
-import { DEFAULT_CHAT_TITLE, ERROR_SENTINEL_PREFIX } from '@/constants';
-import { getTextContent } from '@/lib/getTextContent';
+import { ERROR_SENTINEL_PREFIX } from '@/constants';
 
 // Validate OPENAI_API_KEY at module load for a clear error in dev
 // instead of a cryptic 401 / SDK exception on the first request.
@@ -23,39 +21,6 @@ const openai = createOpenAI({
 // Resolve model name; set OPENAI_MODEL in .env.local to switch without touching code.
 const MODEL_NAME = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 
-// Maximum characters of user input fed into the title-generation prompt.
-const TITLE_INPUT_MAX_LEN = 500;
-
-// Maximum character length for auto-generated chat titles.
-const TITLE_MAX_LEN = 20;
-
-// Use the LLM to generate a concise title; falls back to plain truncation on failure.
-async function generateChatTitle(firstUserText: string): Promise<string> {
-   const prompt =
-      `Summarize the following message into a chat title.\n` +
-      `Rules:\n` +
-      `- Maximum ${TITLE_MAX_LEN} characters (strictly enforced — count carefully)\n` +
-      `- Match the language of the message\n` +
-      `- No quotation marks, no punctuation at the end\n` +
-      `- Output the title only, nothing else\n\n` +
-      `Message: ${firstUserText.slice(0, TITLE_INPUT_MAX_LEN)}`;
-   try {
-      const { text } = await generateText({
-         model: openai(MODEL_NAME),
-         prompt,
-         maxRetries: 1,
-      });
-      const candidate = text.trim().replace(/^["']|["']$/g, '');
-      // Hard-truncate as safety net in case the model ignores the length rule
-      return candidate.length <= TITLE_MAX_LEN ? candidate : candidate.slice(0, TITLE_MAX_LEN);
-   } catch (err) {
-      console.warn('[chat] Title generation failed, falling back to truncation:', err);
-      // Fallback: simple truncation of the raw user text
-      return firstUserText.length <= TITLE_MAX_LEN
-         ? firstUserText
-         : firstUserText.slice(0, TITLE_MAX_LEN);
-   }
-}
 
 export const dynamic = 'force-dynamic';
 
@@ -173,29 +138,9 @@ export async function POST(req: Request) {
                textLength: text.length,
                error: err,
             });
-            // Skip auto-title — the assistant message was not persisted, so
-            // there is nothing useful to generate a title from.
+            // Skip title trigger — the assistant message was not persisted.
             return;
          }
-
-         // Auto-title — runs after the response is fully sent via after() so
-         // Next.js keeps the process alive until the LLM network request completes.
-         after(async () => {
-            try {
-               const freshChat = await getChat(chatId);
-               const alreadyHasTitle = freshChat?.title && freshChat.title !== DEFAULT_CHAT_TITLE;
-               if (!freshChat?.titled && !alreadyHasTitle) {
-                  const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
-                  const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
-                  const title = rawText ? await generateChatTitle(rawText) : undefined;
-                  await updateChat(chatId, title ? { title, titled: true } : { titled: true });
-               } else {
-                  if (!freshChat?.titled) await updateChat(chatId, { titled: true });
-               }
-            } catch (err) {
-               console.error('[title] error:', err);
-            }
-         });
       },
    });
 
