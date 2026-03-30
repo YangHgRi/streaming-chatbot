@@ -1,3 +1,5 @@
+import { cache } from 'react';
+
 import { db } from '@/lib/db';
 import {
    chats,
@@ -30,13 +32,15 @@ export async function getChats(): Promise<Chat[]> {
       .orderBy(desc(chats.updatedAt));
 }
 
-export async function getChat(chatId: string): Promise<Chat | undefined> {
+// server-cache-react: wrap with React.cache() so repeated calls within the
+// same server request (e.g. Sidebar RSC + ChatPage RSC) hit the DB only once.
+export const getChat = cache(async (chatId: string): Promise<Chat | undefined> => {
    const [chat] = await db
       .select()
       .from(chats)
       .where(eq(chats.id, chatId));
    return chat;
-}
+});
 
 export async function updateChat(
    chatId: string,
@@ -56,13 +60,13 @@ export async function deleteChat(chatId: string): Promise<void> {
 
 // ─── Message CRUD ──────────────────────────────────────────────────────────────
 
-export async function getMessages(chatId: string): Promise<Message[]> {
+export const getMessages = cache(async (chatId: string): Promise<Message[]> => {
    return db
       .select()
       .from(messages)
       .where(eq(messages.chatId, chatId))
       .orderBy(asc(messages.createdAt));
-}
+});
 
 export async function createMessage(
    data: Omit<NewMessage, 'createdAt'>,

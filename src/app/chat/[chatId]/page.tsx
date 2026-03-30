@@ -14,11 +14,13 @@ export default async function ChatPage({
    // params is a Promise in Next.js 15+; must await before accessing.
    const { chatId } = await params;
 
-   // Return 404 if the chatId is invalid or not found.
-   const chat = await getChat(chatId);
+   // async-parallel: fire both queries simultaneously — getMessages returns []
+   // harmlessly even if the chat turns out to be missing.
+   const [chat, dbMessages] = await Promise.all([
+      getChat(chatId),
+      getMessages(chatId),
+   ]);
    if (!chat) notFound();
-
-   const dbMessages = await getMessages(chatId);
    // Fetch message history and convert to UIMessage[] for useChat.
    // AI SDK v6 requires id, role, parts array, and metadata — no top-level content field.
    const initialMessages: UIMessage[] = dbMessages

@@ -1,9 +1,26 @@
 'use client';
 import { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import dynamic from 'next/dynamic';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import type { SyntaxHighlighterProps } from 'react-syntax-highlighter';
+
+// bundle-dynamic-imports: Prism is ~300-500 KB — load it only when a code block
+// is actually rendered, not on every page.
+const SyntaxHighlighter = dynamic<SyntaxHighlighterProps>(
+   () => import('react-syntax-highlighter').then((m) => m.Prism as never),
+   {
+      ssr: false,
+      loading: ({ error }) =>
+         error ? null : (
+            <pre className="m-0 p-4 text-[0.85em] bg-gray-900 overflow-x-auto" />
+         ),
+   },
+);
 
 const COPY_RESET_DELAY_MS = 2500;
+
+// js-hoist-regexp: compile RegExp once at module level, not on every render.
+const LANGUAGE_RE = /language-(\w+)/;
 
 interface CodeBlockProps {
    inline?: boolean;
@@ -14,7 +31,7 @@ interface CodeBlockProps {
 export function CodeBlock({ inline, className, children }: CodeBlockProps) {
    const [copied, setCopied] = useState(false);
    const [failed, setFailed] = useState(false);
-   const match = /language-(\w+)/.exec(className ?? '');
+   const match = LANGUAGE_RE.exec(className ?? '');
    const language = match ? match[1] : '';
    const code = String(children ?? '').replace(/\n$/, '');
 

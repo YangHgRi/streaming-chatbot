@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, useTransition } from 'react';
+import { useState, useRef, useTransition } from 'react';
 import type { ChatStatus } from 'ai';
 
 export function MessageInput({
@@ -19,13 +19,8 @@ export function MessageInput({
    const textareaRef = useRef<HTMLTextAreaElement>(null);
    const [isCreating, startCreateTransition] = useTransition();
 
-   // Auto-grow textarea height to fit content, capped at ~8 lines.
-   useEffect(() => {
-      const el = textareaRef.current;
-      if (!el) return;
-      el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-   }, [input]);
+   // rerender-move-effect-to-event: resize is synchronous DOM work triggered by
+   // user input — do it directly in onChange to avoid an extra render cycle.
 
    // Shared submit logic for both onSubmit and onKeyDown handlers.
    function submitIfValid() {
@@ -63,7 +58,13 @@ export function MessageInput({
          <textarea
             ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+               setInput(e.target.value);
+               // Auto-grow textarea height to fit content, capped at ~8 lines.
+               const el = e.currentTarget;
+               el.style.height = 'auto';
+               el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+            }}
             onKeyDown={(e) => {
                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();

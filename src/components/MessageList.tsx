@@ -2,9 +2,27 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { UIMessage } from 'ai';
 import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getTextContent } from '@/lib/getTextContent';
 import { CodeBlock } from './CodeBlock';
+
+// js-hoist-regexp: compile once at module level, not inside render.
+const MD_LANG_RE = /language-\w+/;
+
+// rerender-no-inline-components + rerender-memo: stable module-level references
+// prevent ReactMarkdown from re-rendering every message on unrelated state changes.
+const REMARK_PLUGINS = [remarkGfm];
+const MD_COMPONENTS: Components = {
+   code({ className, children, ...rest }) {
+      const hasLang = MD_LANG_RE.test(className ?? '');
+      return (
+         <CodeBlock inline={!hasLang} className={className} {...rest}>
+            {children}
+         </CodeBlock>
+      );
+   },
+};
 
 const SCROLL_NEAR_BOTTOM_PX = 150;
 const THINKING_COLLAPSE_DELAY_MS = 600;
@@ -459,7 +477,9 @@ export function MessageList({
       prevIsLoadingRef.current = isLoading;
    }, [isLoading, messages, thinkingIds]);
 
-   const togglePill = (id: string) => {
+   // rerender-memo: useCallback gives togglePill a stable reference so that
+   // ThinkingPill's onToggle prop does not change on every MessageList render.
+   const togglePill = useCallback((id: string) => {
       setExpandedIds((prev) => {
          const next = new Set(prev);
          if (next.has(id)) {
@@ -469,7 +489,7 @@ export function MessageList({
          }
          return next;
       });
-   };
+   }, []);
 
    // True when request is sent but no assistant reply exists yet
    const isThinkingPhase =
@@ -530,22 +550,8 @@ export function MessageList({
                         ) : message.role === 'assistant' ? (
                            <div className="prose prose-sm max-w-none">
                               <ReactMarkdown
-                                 remarkPlugins={[remarkGfm]}
-                                 components={{
-                                    code({ className, children, ...rest }) {
-                                       // Determine if inline by checking for language class
-                                       const hasLang = /language-\w+/.test(className ?? '');
-                                       return (
-                                          <CodeBlock
-                                             inline={!hasLang}
-                                             className={className}
-                                             {...rest}
-                                          >
-                                             {children}
-                                          </CodeBlock>
-                                       );
-                                    },
-                                 }}
+                                 remarkPlugins={REMARK_PLUGINS}
+                                 components={MD_COMPONENTS}
                               >
                                  {getTextContent(message)}
                               </ReactMarkdown>
