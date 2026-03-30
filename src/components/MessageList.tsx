@@ -6,6 +6,9 @@ import remarkGfm from 'remark-gfm';
 import { getTextContent } from '@/lib/getTextContent';
 import { CodeBlock } from './CodeBlock';
 
+const SCROLL_NEAR_BOTTOM_PX = 150;
+const THINKING_COLLAPSE_DELAY_MS = 600;
+
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 function IconRefresh() {
@@ -378,7 +381,7 @@ export function MessageList({
          const el = scrollContainerRef.current;
          if (!el) return;
          const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-         const nearBottom = distFromBottom < 150;
+         const nearBottom = distFromBottom < SCROLL_NEAR_BOTTOM_PX;
          setIsNearBottom(nearBottom);
          setShowScrollBtn(!nearBottom);
       });
@@ -449,7 +452,7 @@ export function MessageList({
                   next.delete(lastId);
                   return next;
                });
-            }, 600);
+            }, THINKING_COLLAPSE_DELAY_MS);
             return () => clearTimeout(timer);
          }
       }

@@ -19,7 +19,7 @@ export function MessageInput({
    const textareaRef = useRef<HTMLTextAreaElement>(null);
    const [isCreating, startCreateTransition] = useTransition();
 
-   // Issue #11: auto-grow textarea height to fit content, capped at ~8 lines
+   // Auto-grow textarea height to fit content, capped at ~8 lines.
    useEffect(() => {
       const el = textareaRef.current;
       if (!el) return;
@@ -27,10 +27,7 @@ export function MessageInput({
       el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
    }, [input]);
 
-   // T5: extract submitIfValid() so both the form's onSubmit handler and the
-   // onKeyDown handler share the same code path without needing an unsafe
-   // cross-type cast (KeyboardEvent → FormEvent). Each caller is responsible
-   // for calling e.preventDefault() before invoking this helper.
+   // Shared submit logic for both onSubmit and onKeyDown handlers.
    function submitIfValid() {
       if (!input.trim() || isLoading) return;
       onSend(input.trim());
@@ -39,7 +36,7 @@ export function MessageInput({
       if (textareaRef.current) {
          textareaRef.current.style.height = 'auto';
       }
-      // Return focus to textarea so keyboard users can type the next message immediately
+      // Return focus so keyboard users can type the next message immediately
       textareaRef.current?.focus();
    }
 
@@ -70,7 +67,6 @@ export function MessageInput({
             onKeyDown={(e) => {
                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  // T5: call submitIfValid() directly — no unsafe cast needed
                   submitIfValid();
                }
             }}

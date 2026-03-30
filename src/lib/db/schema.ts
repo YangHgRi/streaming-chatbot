@@ -1,8 +1,9 @@
 import { pgTable, text, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { DEFAULT_CHAT_TITLE } from '@/constants';
 
 export const chats = pgTable('chats', {
    id: text('id').primaryKey(),
-   title: text('title').notNull().default('New Chat'),
+   title: text('title').notNull().default(DEFAULT_CHAT_TITLE),
    titled: boolean('titled').notNull().default(false),
    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

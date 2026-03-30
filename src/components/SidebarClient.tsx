@@ -14,9 +14,8 @@ interface SidebarClientProps {
 }
 
 // ─── RenameInput ───────────────────────────────────────────────────────────────
-// N3 fix: isCancellingRenameRef lives inside this per-chat component so that
-// concurrent blur events from different chat rows never share the same flag.
-// Each mounted RenameInput owns exactly one ref — no cross-row interference.
+// isCancellingRenameRef lives inside this per-chat component so concurrent blur
+// events from different chat rows never share the same flag.
 function RenameInput({
    chatId,
    defaultTitle,
@@ -35,10 +34,8 @@ function RenameInput({
          action={renameChatAction.bind(null, chatId)}
          className="flex-1 min-w-0 px-2 py-1"
          onSubmit={() => {
-            // T2: set the flag to true so the onBlur that fires immediately
-            // after submit (input losing focus during unmount) is suppressed.
-            // Without this, blur sees flag===false and calls requestSubmit()
-            // a second time, sending the rename Server Action twice.
+            // Suppress the onBlur that fires immediately after submit (input losing
+            // focus during unmount), which would otherwise call requestSubmit() twice.
             isCancellingRef.current = true;
             onDone();
          }}
@@ -52,9 +49,8 @@ function RenameInput({
             className="w-full min-w-0 text-sm text-white bg-transparent border border-gray-500 rounded px-1 py-1 focus:outline-none focus:border-blue-400"
             onKeyDown={(e) => {
                if (e.key === 'Escape') {
-                  // Set flag BEFORE triggering blur so the onBlur handler below
-                  // can bail out without calling requestSubmit(). React event order:
-                  // keyDown → blur → re-render; state update from onDone() fires last.
+                  // Set flag BEFORE triggering blur so the onBlur handler can bail out.
+                  // React event order: keyDown → blur → re-render.
                   isCancellingRef.current = true;
                   onDone();
                }
@@ -83,17 +79,15 @@ export function SidebarClient({
    const [editingId, setEditingId] = useState<string | null>(null);
    const [confirmingId, setConfirmingId] = useState<string | null>(null);
    const [isPending, startTransition] = useTransition();
-   // W1: a second, independent transition for chat creation so 'isCreating' only
-   // tracks the createChatAction call. Using the shared isPending transition meant
-   // 'Creating…' / disabled state only fired during deletes, never during creation.
+   // Separate transition for chat creation so 'isCreating' only tracks createChatAction.
    const [isCreating, startCreateTransition] = useTransition();
 
-   // Auto-close sidebar on mobile after navigation (task-19: desktop always-visible fix)
+   // Auto-close sidebar on mobile after navigation.
    useEffect(() => {
       if (window.innerWidth < 768) close();
    }, [pathname, close]);
 
-   // Lock body scroll when mobile sidebar is open (task-12)
+   // Lock body scroll when mobile sidebar is open.
    useEffect(() => {
       if (isOpen) {
          document.body.style.overflow = 'hidden';
@@ -143,7 +137,7 @@ export function SidebarClient({
 
             {/* Scrollable chat list */}
             <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-               {/* Empty state (task-7) */}
+               {/* Empty state */}
                {chats.length === 0 && (
                   <div className="px-3 py-8 text-center">
                      <p className="text-sm text-gray-400">还没有对话</p>
@@ -160,14 +154,13 @@ export function SidebarClient({
                         key={chat.id}
                         className={[
                            'group flex items-center gap-1 rounded-lg',
-                           // task-9: left blue border as active indicator
+                           // Left blue border as active indicator
                            isActive
                               ? 'bg-gray-700 border-l-2 border-blue-500'
                               : 'hover:bg-gray-800 border-l-2 border-transparent',
                         ].join(' ')}
                      >
                         {isEditing ? (
-                           // N3: RenameInput owns its own isCancellingRef — no shared state
                            <RenameInput
                               chatId={chat.id}
                               defaultTitle={chat.title}
@@ -190,7 +183,7 @@ export function SidebarClient({
                            <div
                               className={[
                                  'items-center gap-1 pr-2 flex-shrink-0',
-                                 // task-11: active item always shows buttons on touch devices
+                                 // Active item always shows buttons on touch devices
                                  isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
                               ].join(' ')}
                            >

@@ -1,6 +1,5 @@
-// src/components/Sidebar.tsx
 // Async Server Component — fetches all chats and passes Server Actions as props to SidebarClient.
-// Re-fetches chats on every request after revalidatePath('/', 'layout') is called.
+// Re-fetches on every request after revalidatePath('/', 'layout') is called.
 import { getChats } from '@/lib/db/queries';
 import { SidebarClient } from './SidebarClient';
 import {

@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createChat, updateChat, deleteChat, getChats, deleteMessagesFrom } from '@/lib/db/queries';
 
-// CONV-01: Create a new chat and navigate to it.
-// revalidatePath is called BEFORE redirect so the sidebar data is fresh when the
-// redirected page renders (Router Cache is busted before the new URL loads).
+// Create a new chat and navigate to it.
+// revalidatePath is called BEFORE redirect so the sidebar data is fresh
+// when the redirected page renders.
 export async function createChatAction() {
    let chatId: string;
    try {
@@ -18,16 +18,9 @@ export async function createChatAction() {
    redirect(`/chat/${chatId}`);
 }
 
-// CONV-04: Rename a conversation.
-// chatId is pre-bound via .bind(null, chat.id) in SidebarClient's form action.
-// formData carries the 'title' input field value.
-// Guard: returns error on blank/whitespace — prevents saving empty titles.
-// No redirect — user stays on the current chat; sidebar title updates via revalidatePath.
+// Rename a conversation.
 export async function renameChatAction(chatId: string, formData: FormData) {
-   // W3: FormData.get() returns string | File | null.
-   // The previous 'as string' cast bypassed the File branch — if a file field with
-   // the same name were submitted, .trim() would throw TypeError at runtime.
-   // A typeof guard narrows to string safely before any further operations.
+   // FormData.get() returns string | File | null; typeof guard narrows to string safely.
    const raw = formData.get('title');
    if (typeof raw !== 'string' || !raw.trim()) {
       throw new Error('Title cannot be empty.');
@@ -40,16 +33,12 @@ export async function renameChatAction(chatId: string, formData: FormData) {
    revalidatePath('/', 'layout');
 }
 
-// CONV-05: Delete a conversation and all its messages.
-// deleteChat uses CASCADE on the messages foreign key — all child message rows are
-// removed automatically by Postgres. No separate deleteMessages() call needed.
-//
-// N5 fix: redirect to the next available chat instead of always going to '/';
-// navigating to '/' would create a fresh empty chat even when others still exist.
+// Delete a conversation and all its messages.
+// deleteChat uses CASCADE on the FK — child message rows are removed automatically.
 export async function deleteChatAction(chatId: string) {
    let nextChatId: string | undefined;
    try {
-      // Fetch the chat list BEFORE deleting so we can find a sibling to redirect to
+      // Fetch the chat list BEFORE deleting to find a sibling to redirect to.
       const allChats = await getChats();
       const nextChat = allChats.find((c) => c.id !== chatId);
       nextChatId = nextChat?.id;
@@ -66,10 +55,8 @@ export async function deleteChatAction(chatId: string) {
    }
 }
 
-
-// MSG-ACTION: Delete a message and everything after it in the same chat.
-// Called by both 'refresh' (caller will re-send the preceding messages)
-// and 'delete' (caller simply removes from UI).
+// Delete a message and everything after it in the same chat.
+// Called by both 'refresh' and 'delete' message actions.
 export async function deleteMessagesFromAction(
    chatId: string,
    fromMessageId: string,

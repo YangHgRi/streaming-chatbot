@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
+const COPY_RESET_DELAY_MS = 2500;
+
 interface CodeBlockProps {
    inline?: boolean;
    className?: string;
@@ -27,10 +29,10 @@ export function CodeBlock({ inline, className, children }: CodeBlockProps) {
    function handleCopy() {
       navigator.clipboard.writeText(code).then(() => {
          setCopied(true);
-         setTimeout(() => setCopied(false), 2500);
+         setTimeout(() => setCopied(false), COPY_RESET_DELAY_MS);
       }).catch(() => {
          setFailed(true);
-         setTimeout(() => setFailed(false), 2500);
+         setTimeout(() => setFailed(false), COPY_RESET_DELAY_MS);
       });
    }
 

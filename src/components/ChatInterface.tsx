@@ -10,6 +10,8 @@ import { getTextContent } from '@/lib/getTextContent';
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 const MAX_TOASTS = 3;
+const TOAST_DURATION_MS = 2500;
+const CONFIRM_TIMEOUT_MS = 5000;
 
 interface Toast {
    id: number;
@@ -73,7 +75,7 @@ export function ChatInterface({
          const trimmed = prev.length >= MAX_TOASTS ? prev.slice(prev.length - MAX_TOASTS + 1) : prev;
          return [...trimmed, { id, message, type }];
       });
-      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 2500);
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), TOAST_DURATION_MS);
    }, []);
 
    const dismissToast = useCallback((id: number) => {
@@ -98,7 +100,7 @@ export function ChatInterface({
       pendingTimerRef.current = setTimeout(() => {
          setPendingAction(null);
          pendingCallbackRef.current = null;
-      }, 5000);
+      }, CONFIRM_TIMEOUT_MS);
    }, []);
 
    const handleConfirm = useCallback(() => {

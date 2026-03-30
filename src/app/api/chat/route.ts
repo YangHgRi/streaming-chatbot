@@ -2,11 +2,11 @@ import { streamText, generateText, convertToModelMessages, type UIMessage } from
 import { after } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
+import { DEFAULT_CHAT_TITLE, ERROR_SENTINEL_PREFIX } from '@/constants';
 import { getTextContent } from '@/lib/getTextContent';
 
-// W4: validate OPENAI_API_KEY at module load — gives a clear error message in dev
+// Validate OPENAI_API_KEY at module load for a clear error in dev
 // instead of a cryptic 401 / SDK exception on the first request.
-// Mirrors the DATABASE_URL guard in src/lib/db/index.ts.
 if (!process.env.OPENAI_API_KEY) {
    throw new Error(
       'OPENAI_API_KEY environment variable is not set. ' +
@@ -14,24 +14,22 @@ if (!process.env.OPENAI_API_KEY) {
    );
 }
 
-// Instantiate provider with optional base URL override.
-// Set OPENAI_API_BASE_URL in .env.local to point at a custom endpoint
-// (e.g. a proxy, Azure OpenAI, or any OpenAI-compatible API).
-// Falls back to the official OpenAI API when the variable is unset.
+// Optional base URL override — set OPENAI_API_BASE_URL in .env.local
+// to point at a proxy, Azure OpenAI, or any OpenAI-compatible API.
 const openai = createOpenAI({
    baseURL: process.env.OPENAI_API_BASE_URL,
 });
 
-// Resolve model name from environment variable, defaulting to 'gpt-4o-mini'.
-// Set OPENAI_MODEL in .env.local to switch models without touching code.
+// Resolve model name; set OPENAI_MODEL in .env.local to switch without touching code.
 const MODEL_NAME = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
 
-// TITLE-01: Maximum character length for auto-generated chat titles.
-// Titles longer than this are hard-truncated as a safety fallback.
+// Maximum characters of user input fed into the title-generation prompt.
+const TITLE_INPUT_MAX_LEN = 500;
+
+// Maximum character length for auto-generated chat titles.
 const TITLE_MAX_LEN = 20;
 
-// TITLE-02: Use the LLM to generate a concise title from the first user message.
-// Falls back to plain truncation if the LLM call fails or returns an oversized string.
+// Use the LLM to generate a concise title; falls back to plain truncation on failure.
 async function generateChatTitle(firstUserText: string): Promise<string> {
    const prompt =
       `Summarize the following message into a chat title.\n` +
@@ -40,7 +38,7 @@ async function generateChatTitle(firstUserText: string): Promise<string> {
       `- Match the language of the message\n` +
       `- No quotation marks, no punctuation at the end\n` +
       `- Output the title only, nothing else\n\n` +
-      `Message: ${firstUserText.slice(0, 500)}`;
+      `Message: ${firstUserText.slice(0, TITLE_INPUT_MAX_LEN)}`;
    try {
       const { text } = await generateText({
          model: openai(MODEL_NAME),
@@ -62,7 +60,7 @@ async function generateChatTitle(firstUserText: string): Promise<string> {
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
-   // Issue #3: parse body safely — malformed JSON returns 400 instead of 500
+   // Parse body safely — malformed JSON returns 400 instead of 500
    let body: { id?: unknown; messages?: unknown };
    try {
       body = await req.json();
@@ -77,36 +75,27 @@ export async function POST(req: Request) {
       return new Response('Missing or invalid chatId', { status: 400 });
    }
 
-   // W6: run cheap in-memory validations before any DB round-trip.
-   // A malformed request should be rejected without touching the database.
+   // Run cheap in-memory validations before any DB round-trip.
    if (!Array.isArray(messages) || messages.length === 0) {
       return new Response('Missing or invalid messages array', { status: 400 });
    }
 
-   // V2: verify the chat exists in the DB before touching messages.
-   // Without this, an unknown chatId triggers a PostgreSQL FK violation (23503)
-   // which bubbles up as an unhandled 500. The ChatPage SSR guard does not
-   // protect this API route — it must defend itself.
+   // Verify the chat exists before touching messages; an unknown chatId would
+   // trigger a PostgreSQL FK violation (23503) that bubbles up as an unhandled 500.
    const chat = await getChat(chatId);
    if (!chat) {
       return new Response('Chat not found', { status: 404 });
    }
 
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
-   // (PERS-02, RELY-02 — user message saved exactly once, outside retry loop)
-   // The last message in the array is always the new user message for trigger=submit-message
-   // W10: messages.length > 0 is already guaranteed by the check above (line 43),
-   // so at(-1) cannot return undefined here. Drop '| undefined' from the cast
-   // and replace the downstream optional-chain with a direct property access.
+   // User message is saved exactly once, outside the retry loop.
    const lastMessage = messages.at(-1) as Record<string, unknown>;
    if (lastMessage.role === 'user') {
-      // Issue #7: use explicit type guard instead of inline cast
+      // Use explicit type guard instead of inline cast
       const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
       const content = parts
          .filter((p): p is { type: 'text'; text: string } => {
-            // W2: the predicate must verify BOTH type === 'text' AND that text is a
-            // string. Checking only `type` lets through { type:'text', text: undefined }
-            // which TypeScript treats as string but joins as the literal "undefined".
+            // Verify BOTH type === 'text' AND that text is a string to avoid
             if (typeof p !== 'object' || p === null) return false;
             const r = p as Record<string, unknown>;
             return r.type === 'text' && typeof r.text === 'string';
@@ -114,26 +103,19 @@ export async function POST(req: Request) {
          .map((p) => p.text)
          .join('');
 
-      // T3: server-side guard — skip insert when there is no text content
-      // (e.g. a message composed entirely of non-text parts). The client
-      // already prevents empty sends, but we must not trust client input.
+      // Skip insert when there is no text content — e.g. a message composed
+      // entirely of non-text parts.
       if (!content) {
          return new Response('Empty message content', { status: 400 });
       }
 
-      // T1: use the UIMessage's own stable id as the DB row id.
-      // crypto.randomUUID() produced a new id on every request, so
-      // onConflictDoNothing() never fired on retry — the same user message
-      // was inserted repeatedly. lastMessage.id is assigned by the SDK and
-      // remains constant across client retries.
+      // Use the UIMessage's own stable id as the DB row id so that
+      // onConflictDoNothing fires correctly on client retries.
       const msgId =
          typeof lastMessage.id === 'string' && lastMessage.id.length > 0
             ? lastMessage.id
             : (() => {
-               // V1: SDK should always assign a stable id; if it is missing
-               // the onConflictDoNothing idempotency guarantee breaks and the
-               // same user message may be inserted on every client retry.
-               // Log a warning so any regression surfaces in server logs.
+               // SDK should always assign a stable id; warn if missing so any
                console.warn('[chat] lastMessage.id missing — falling back to randomUUID(); retries may duplicate this message');
                return crypto.randomUUID();
             })();
@@ -146,33 +128,24 @@ export async function POST(req: Request) {
       });
    }
 
-   // ── STEP 2: Convert UIMessage[] to ModelMessage[] (REQUIRED for ai@6) ────────
-   // convertToModelMessages is async — must await. Passing UIMessage[] directly to
-   // streamText causes TypeScript errors and runtime failures.
-   // U1: messages passed Array.isArray narrowing → unknown[], not UIMessage[].
-   // Explicit cast is safe here: the SDK-assigned structure is validated above
-   // (non-empty array, role/parts checked for lastMessage). Casting lets TypeScript
-   // catch future signature changes at the call site.
+   // ── STEP 2: Convert UIMessage[] to ModelMessage[] (required for AI SDK v6) ──
    const modelMessages = await convertToModelMessages(messages as UIMessage[]);
 
-   // ── STEP 3: Stream with built-in retry (RELY-01) ──────────────────────────────
-   // SDK default: maxRetries=2, exponential backoff, retries on 429/5xx/timeout only.
-   // User message save above is NOT in the retry path — no duplication risk (RELY-02).
+   // ── STEP 3: Stream with built-in retry ─────────────────────────────────────
    const result = streamText({
       model: openai(MODEL_NAME),
       messages: modelMessages,
       system: 'You are a helpful assistant.',
       maxRetries: 2,
       onError: async ({ error }) => {
-         // PERS-05: persist a sentinel error message so the error survives page
-         // reload. The '__ERROR__:' prefix lets page.tsx mark it with metadata.
+         // Persist a sentinel error message so the error survives page reload.
          const msg = error instanceof Error ? error.message : 'Unknown error';
          try {
             await createMessage({
                id: crypto.randomUUID(),
                chatId,
                role: 'assistant',
-               content: `__ERROR__:${msg}`,
+               content: `${ERROR_SENTINEL_PREFIX}${msg}`,
             });
             await updateChat(chatId, {});
          } catch (persistErr) {
@@ -180,10 +153,9 @@ export async function POST(req: Request) {
          }
       },
       onFinish: async ({ text }) => {
-         // ── STEP 4: Persist assistant response after stream completes (PERS-03) ───
-         // onFinish fires exactly once per successful stream.
-         // MUST be wrapped in try/catch — HTTP response already sent (200 OK),
-         // so errors here cannot propagate to the client (Failure Mode 3).
+         // ── STEP 4: Persist assistant response after stream completes ───────────
+         // onFinish fires exactly once. MUST be wrapped in try/catch — the HTTP
+         // response is already sent (200 OK), so errors here cannot reach the client.
          try {
             await createMessage({
                id: crypto.randomUUID(),
@@ -202,17 +174,12 @@ export async function POST(req: Request) {
             return;
          }
 
-         // TITLE-01: auto-title — runs *after* the response is fully sent.
-         // Registered with after() so Next.js keeps the process alive until
-         // generateChatTitle (a new LLM network request) completes.
-         // Without after(), the runtime may terminate before the call finishes.
+         // Auto-title — runs after the response is fully sent via after() so
+         // Next.js keeps the process alive until the LLM network request completes.
          after(async () => {
             try {
-               // TITLE-02: guard — fire once per chat via the `titled` flag.
-               // Compatibility: if titled=false but title is already real (legacy
-               // row or concurrent write), self-heal the flag and skip naming.
                const freshChat = await getChat(chatId);
-               const alreadyHasTitle = freshChat?.title && freshChat.title !== 'New Chat';
+               const alreadyHasTitle = freshChat?.title && freshChat.title !== DEFAULT_CHAT_TITLE;
                if (!freshChat?.titled && !alreadyHasTitle) {
                   const firstUserMsg = (messages as UIMessage[]).find((m) => m.role === 'user');
                   const rawText = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
@@ -222,15 +189,12 @@ export async function POST(req: Request) {
                   if (!freshChat?.titled) await updateChat(chatId, { titled: true });
                }
             } catch (err) {
-               console.error('[chat] Title generation error:', { chatId, error: err });
+               console.error('[title] error:', err);
             }
          });
       },
    });
 
    // ── STEP 5: Return streaming response ────────────────────────────────────────
-   // toUIMessageStreamResponse() returns a Response backed by a ReadableStream.
-   // Do NOT await result.text before returning — that causes a hang (Failure Mode 1).
-   // export const dynamic = 'force-dynamic' prevents Next.js from buffering (Failure Mode 5).
    return result.toUIMessageStreamResponse();
 }
