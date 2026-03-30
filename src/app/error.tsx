@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function GlobalError({
    reset,
 }: {
-   error: Error & { digest?: string };
+   error?: Error & { digest?: string };
    reset: () => void;
 }) {
    return (
@@ -26,7 +26,7 @@ export default function GlobalError({
             </svg>
          </div>
          <div>
-            <h1 className="text-xl font-semibold text-gray-800 mb-2">出错了</h1>
+            <h1 className="text-xl font-semibold text-gray-800 mb-2">Something went wrong</h1>
             <p className="text-sm text-gray-500 max-w-sm">
                Something went wrong. Please try again or return to the home page.
             </p>

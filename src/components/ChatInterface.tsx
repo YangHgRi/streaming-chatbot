@@ -218,7 +218,7 @@ export function ChatInterface({
             onSend={handleSend}
          />
          <MessageInput
-            onSend={(text) => sendMessage({ text })}
+            onSend={handleSend}
             onNewChat={onNewChat}
             onStop={stop}
             status={status}

@@ -82,9 +82,12 @@ export function SidebarClient({
    // Separate transition for chat creation so 'isCreating' only tracks createChatAction.
    const [isCreating, startCreateTransition] = useTransition();
 
+   // Matches the Tailwind `md` breakpoint used in layout CSS (md:hidden / md:relative).
+   const MOBILE_BREAKPOINT_PX = 768;
+
    // Auto-close sidebar on mobile after navigation.
    useEffect(() => {
-      if (window.innerWidth < 768) close();
+      if (window.innerWidth < MOBILE_BREAKPOINT_PX) close();
    }, [pathname, close]);
 
    // Lock body scroll when mobile sidebar is open.
@@ -140,7 +143,7 @@ export function SidebarClient({
                {/* Empty state */}
                {chats.length === 0 && (
                   <div className="px-3 py-8 text-center">
-                     <p className="text-sm text-gray-400">还没有对话</p>
+                     <p className="text-sm text-gray-400">No conversations yet</p>
                      <p className="text-xs text-gray-500 mt-1">Click New Chat to get started</p>
                   </div>
                )}

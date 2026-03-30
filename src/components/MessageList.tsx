@@ -572,7 +572,7 @@ export function MessageList({
                   {/* Confirm popover — only shown for the message currently pending confirmation */}
                   {hasPendingAction && (
                      <ConfirmPopover
-                        action={pendingAction!.type}
+                        action={pendingAction?.type ?? 'delete'}
                         isUser={isUser}
                         onConfirm={onConfirm}
                         onCancel={onCancel}

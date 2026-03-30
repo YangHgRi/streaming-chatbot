@@ -147,6 +147,7 @@ export async function POST(req: Request) {
                role: 'assistant',
                content: `${ERROR_SENTINEL_PREFIX}${msg}`,
             });
+            // Touch updatedAt so the sidebar re-sorts this chat to the top.
             await updateChat(chatId, {});
          } catch (persistErr) {
             console.error('[chat] CRITICAL: Failed to persist error message:', { chatId, error: persistErr });
@@ -163,6 +164,7 @@ export async function POST(req: Request) {
                role: 'assistant',
                content: text,
             });
+            // Touch updatedAt so the sidebar re-sorts this chat to the top.
             await updateChat(chatId, {});
          } catch (err) {
             // Silent DB failures are unacceptable — log explicitly
@@ -171,6 +173,8 @@ export async function POST(req: Request) {
                textLength: text.length,
                error: err,
             });
+            // Skip auto-title — the assistant message was not persisted, so
+            // there is nothing useful to generate a title from.
             return;
          }
 

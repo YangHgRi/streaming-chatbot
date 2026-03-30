@@ -6,7 +6,7 @@ import {
    type Message,
    type NewMessage,
 } from '@/lib/db/schema';
-import { eq, asc, desc, gte, and } from 'drizzle-orm';
+import { eq, asc, desc, and, inArray } from 'drizzle-orm';
 import { DEFAULT_CHAT_TITLE } from '@/constants';
 
 // ─── Chat CRUD ─────────────────────────────────────────────────────────────────
@@ -89,24 +89,32 @@ export async function createMessage(
 
 // ─── Message deletion ─────────────────────────────────────────────────────────
 
-// Delete fromMessageId and all messages created at or after it in the same chat.
-// Used by the refresh and delete-message actions.
+// Delete fromMessageId and all messages that appear after it in the same chat.
+// Uses an ID-based sub-query so that messages sharing the same createdAt
+// timestamp (possible when defaultNow() fires within the same millisecond) are
+// never accidentally removed.
 export async function deleteMessagesFrom(
    chatId: string,
    fromMessageId: string,
 ): Promise<void> {
-   // Resolve the anchor message's createdAt so we can delete it plus everything after.
-   const [anchor] = await db
-      .select({ createdAt: messages.createdAt })
+   // Collect the IDs of the anchor and every message that follows it (by
+   // insertion order, i.e. ascending createdAt then id) within this chat.
+   const allMessages = await db
+      .select({ id: messages.id })
       .from(messages)
-      .where(and(eq(messages.id, fromMessageId), eq(messages.chatId, chatId)));
-   if (!anchor) return; // already gone — nothing to do
+      .where(eq(messages.chatId, chatId))
+      .orderBy(asc(messages.createdAt), asc(messages.id));
+
+   const anchorIndex = allMessages.findIndex((m) => m.id === fromMessageId);
+   if (anchorIndex === -1) return; // already gone — nothing to do
+
+   const idsToDelete = allMessages.slice(anchorIndex).map((m) => m.id);
    await db
       .delete(messages)
       .where(
          and(
             eq(messages.chatId, chatId),
-            gte(messages.createdAt, anchor.createdAt),
+            inArray(messages.id, idsToDelete),
          ),
       );
 }

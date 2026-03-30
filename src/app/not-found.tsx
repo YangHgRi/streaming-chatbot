@@ -20,7 +20,7 @@ export default function NotFound() {
             </svg>
          </div>
          <div>
-            <h1 className="text-xl font-semibold text-gray-800 mb-2">页面未找到</h1>
+            <h1 className="text-xl font-semibold text-gray-800 mb-2">Page not found</h1>
             <p className="text-sm text-gray-500 max-w-sm">
                The page you are looking for does not exist or has been moved.
             </p>
