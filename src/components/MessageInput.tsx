@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useTransition } from 'react';
+import { MessageSquarePlus } from 'lucide-react';
 import type { ChatStatus } from 'ai';
 
 export function MessageInput({
@@ -52,10 +53,7 @@ export function MessageInput({
             title="New chat"
             className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-               <line x1="12" y1="5" x2="12" y2="19" />
-               <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
+            <MessageSquarePlus size={20} />
          </button>
          <textarea
             ref={textareaRef}
