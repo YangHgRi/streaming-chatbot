@@ -85,15 +85,6 @@ function IconChevronDown({ size = 12 }: { size?: number }) {
    );
 }
 
-function IconChevronUp({ size = 12 }: { size?: number }) {
-   return (
-      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" strokeWidth="2.5"
-         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-         <path d="m18 15-6-6-6 6" />
-      </svg>
-   );
-}
 
 // ─── DotPulse ────────────────────────────────────────────────────────────────
 // Simple three-dot loading animation shown while waiting for the first token.
@@ -284,45 +275,6 @@ export interface PendingAction {
    type: 'refresh' | 'delete' | 'edit';
 }
 
-// ─── VersionNav ─────────────────────────────────────────────────────────────
-
-function VersionNav({
-   current,
-   total,
-   onPrev,
-   onNext,
-}: {
-   current: number;
-   total: number;
-   onPrev: () => void;
-   onNext: () => void;
-}) {
-   return (
-      <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-         <button
-            type="button"
-            onClick={onPrev}
-            disabled={current <= 1}
-            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
-         >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-               <path d="m15 18-6-6 6-6" />
-            </svg>
-         </button>
-         <span>{current}/{total}</span>
-         <button
-            type="button"
-            onClick={onNext}
-            disabled={current >= total}
-            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
-         >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-               <path d="m9 18 6-6-6-6" />
-            </svg>
-         </button>
-      </div>
-   );
-}
 
 // ─── MessageList ──────────────────────────────────────────────────────────────
 
@@ -394,8 +346,6 @@ export function MessageList({
    onConfirm,
    onCancel,
    onSend,
-   pastVersions,
-   onRestoreVersion,
 }: {
    messages: UIMessage[];
    isLoading: boolean;
@@ -408,15 +358,12 @@ export function MessageList({
    onConfirm: () => void;
    onCancel: () => void;
    onSend: (text: string) => void;
-   pastVersions?: Record<string, string[]>;
-   onRestoreVersion?: (userMsgId: string, text: string) => void;
 }) {
    const scrollContainerRef = useRef<HTMLDivElement>(null);
    const bottomRef = useRef<HTMLDivElement>(null);
    const [isNearBottom, setIsNearBottom] = useState(true);
    const [showScrollBtn, setShowScrollBtn] = useState(false);
    const [editingId, setEditingId] = useState<string | null>(null);
-   const [versionCursors, setVersionCursors] = useState<Record<string, number>>({});
    const rafRef = useRef<number | null>(null);
 
    // ── Smart auto-scroll ──────────────────────────────────────────────────────
@@ -497,20 +444,6 @@ export function MessageList({
             const isLastAndStreaming = isLoading && message.id === lastMessageId;
             const hasPendingAction = pendingAction?.messageId === message.id && pendingAction?.type !== 'edit';
             const isEditing = editingId === message.id;
-            // Version navigation for assistant messages
-            const msgIndex = messages.findIndex(m => m.id === message.id);
-            const userMsgBefore = !isUser && msgIndex > 0
-               ? [...messages.slice(0, msgIndex)].reverse().find(m => m.role === ROLE_USER)
-               : undefined;
-            const pastVers = (userMsgBefore && pastVersions) ? (pastVersions[userMsgBefore.id] ?? []) : [];
-            const totalVers = pastVers.length + 1;
-            // allVersions: oldest-first. pastVers is stored newest-first (index 0 = most recent old version).
-            // The last slot is the original latest text from the actual message — never overwritten.
-            const latestText = getTextContent(message);
-            const allVersions = [...pastVers].reverse().concat([latestText]);
-            // Default cursor: latest (last index). Cursor only overrides the displayed text; message.parts untouched.
-            const currentVersIdx = versionCursors[userMsgBefore?.id ?? ''] ?? (totalVers - 1);
-            const displayText = totalVers > 1 ? allVersions[currentVersIdx] : latestText;
 
             return (
                <div
@@ -537,7 +470,7 @@ export function MessageList({
                            />
                         ) : message.role === ROLE_ASSISTANT && isError ? (
                            <span className="text-sm">Something went wrong. Please try again.</span>
-                        ) : message.role === ROLE_ASSISTANT && isLastAndStreaming && !displayText ? (
+                        ) : message.role === ROLE_ASSISTANT && isLastAndStreaming ? (
                            <DotPulse inline />
                         ) : message.role === ROLE_ASSISTANT ? (
                            <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -545,7 +478,7 @@ export function MessageList({
                                  remarkPlugins={REMARK_PLUGINS}
                                  components={MD_COMPONENTS}
                               >
-                                 {displayText}
+                                 {getTextContent(message)}
                               </ReactMarkdown>
                            </div>
                         ) : (
@@ -554,27 +487,6 @@ export function MessageList({
                      </div>
                   </div>
 
-                  {/* Version navigation — shown for assistant messages with history */}
-                  {!isUser && totalVers > 1 && userMsgBefore && !isLastAndStreaming && (
-                     <VersionNav
-                        current={currentVersIdx + 1}
-                        total={totalVers}
-                        onPrev={() => {
-                           if (currentVersIdx > 0) {
-                              const newIdx = currentVersIdx - 1;
-                              setVersionCursors(prev => ({ ...prev, [userMsgBefore.id]: newIdx }));
-                              onRestoreVersion?.(userMsgBefore.id, allVersions[newIdx]);
-                           }
-                        }}
-                        onNext={() => {
-                           if (currentVersIdx < totalVers - 1) {
-                              const newIdx = currentVersIdx + 1;
-                              setVersionCursors(prev => ({ ...prev, [userMsgBefore.id]: newIdx }));
-                              onRestoreVersion?.(userMsgBefore.id, allVersions[newIdx]);
-                           }
-                        }}
-                     />
-                  )}
 
                   {/* Action buttons — hidden until bubble is hovered, invisible during streaming */}
                   {!isLastAndStreaming && !isEditing && (

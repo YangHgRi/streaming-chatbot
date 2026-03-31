@@ -89,8 +89,6 @@ export function ChatInterface({
 
    const [showSystemPrompt, setShowSystemPrompt] = useState(false);
 
-   // pastVersions: Map from user-message-id to array of OLD assistant texts (newest first)
-   const [pastVersions, setPastVersions] = useState<Record<string, string[]>>({});
 
    const { toggle } = useSidebar();
    const [showShortcuts, setShowShortcuts] = useState(false);
@@ -208,15 +206,6 @@ export function ChatInterface({
             // Keep all messages strictly before the target AI message.
             const messagesBeforeThis = messages.slice(0, idx);
 
-            // Record old assistant response for version history.
-            const currentText = getTextContent(msg);
-            const promptMsg = [...messagesBeforeThis].reverse().find((m) => m.role === ROLE_USER);
-            if (promptMsg) {
-               setPastVersions(prev => ({
-                  ...prev,
-                  [promptMsg.id]: [currentText, ...(prev[promptMsg.id] ?? [])],
-               }));
-            }
 
             const snapshot = messages;
             // Optimistically update UI: show only messages before the target.
@@ -309,7 +298,6 @@ export function ChatInterface({
             onConfirm={handleConfirm}
             onCancel={handleCancel}
             onSend={handleSend}
-            pastVersions={pastVersions}
 
          />
          <MessageInput
