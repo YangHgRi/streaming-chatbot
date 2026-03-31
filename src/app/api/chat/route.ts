@@ -100,7 +100,7 @@ export async function POST(req: Request) {
    const result = streamText({
       model: openai(MODEL_NAME),
       messages: modelMessages,
-      system: 'You are a helpful assistant.',
+      system: chat.systemPrompt || 'You are a helpful assistant.',
       maxRetries: 2,
       onError: async ({ error }) => {
          // Persist a sentinel error message so the error survives page reload.

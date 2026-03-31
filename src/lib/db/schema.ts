@@ -5,8 +5,11 @@ export const chats = pgTable('chats', {
    id: text('id').primaryKey(),
    title: text('title').notNull().default(DEFAULT_CHAT_TITLE),
    titled: boolean('titled').notNull().default(false),
+   pinned: boolean('pinned').notNull().default(false),
    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+   systemPrompt: text('system_prompt'),
+   shareId: text('share_id').unique(),
 });
 
 export const messages = pgTable(

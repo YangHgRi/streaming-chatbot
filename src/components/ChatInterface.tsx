@@ -7,6 +7,9 @@ import { MessageList, type PendingAction } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { deleteMessagesFromAction } from '@/app/actions';
 import { getTextContent } from '@/lib/getTextContent';
+import { SystemPromptModal } from './SystemPromptModal';
+import { SlidersHorizontal } from 'lucide-react';
+import { useSidebar } from './SidebarProvider';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -47,11 +50,15 @@ export function ChatInterface({
    initialMessages,
    onNewChat,
    titled,
+   systemPrompt,
+   onUpdateSystemPrompt,
 }: {
    chatId: string;
    initialMessages: UIMessage[];
    onNewChat: () => Promise<void>;
    titled: boolean;
+   systemPrompt: string;
+   onUpdateSystemPrompt: (prompt: string) => Promise<void>;
 }) {
    const { messages, sendMessage, setMessages, status, error, stop } = useChat({
       id: chatId,
@@ -79,6 +86,47 @@ export function ChatInterface({
    }, [status, router, chatId, messages, titled]);
 
    const isLoading = status === 'submitted' || status === 'streaming';
+
+   const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+
+   // pastVersions: Map from user-message-id to array of OLD assistant texts (newest first)
+   const [pastVersions, setPastVersions] = useState<Record<string, string[]>>({});
+
+   const { toggle } = useSidebar();
+   const [showShortcuts, setShowShortcuts] = useState(false);
+
+   useEffect(() => {
+      const handler = (e: KeyboardEvent) => {
+         const active = document.activeElement;
+         const isInput = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
+
+         // Ctrl/Cmd+N: new chat (only when not typing)
+         if ((e.ctrlKey || e.metaKey) && e.key === 'n' && !e.shiftKey) {
+            if (!isInput) {
+               e.preventDefault();
+               onNewChat();
+            }
+         }
+
+         // Ctrl/Cmd+Shift+S: toggle sidebar
+         if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+            e.preventDefault();
+            toggle();
+         }
+
+         // ?: toggle shortcuts help panel (only when not typing)
+         if (e.key === '?' && !isInput) {
+            setShowShortcuts((prev) => !prev);
+         }
+
+         // Escape: close shortcuts panel
+         if (e.key === 'Escape') {
+            setShowShortcuts(false);
+         }
+      };
+      window.addEventListener('keydown', handler);
+      return () => window.removeEventListener('keydown', handler);
+   }, [onNewChat, toggle]);
 
    const stopRef = useRef(stop);
    useEffect(() => { stopRef.current = stop; });
@@ -170,6 +218,26 @@ export function ChatInterface({
             const promptText = getTextContent(promptMsg);
             if (!promptText) return;
 
+            // Record old assistant response for version history
+            if (msg.role === 'assistant') {
+               const currentText = getTextContent(msg);
+               setPastVersions(prev => ({
+                  ...prev,
+                  [promptMsg.id]: [currentText, ...(prev[promptMsg.id] ?? [])],
+               }));
+            } else if (msg.role === 'user') {
+               // Refreshing from user message — find the assistant after it
+               const assistantIdx = idx + 1;
+               const assistantMsg = messages[assistantIdx];
+               if (assistantMsg && assistantMsg.role === 'assistant') {
+                  const currentText = getTextContent(assistantMsg);
+                  setPastVersions(prev => ({
+                     ...prev,
+                     [msg.id]: [currentText, ...(prev[msg.id] ?? [])],
+                  }));
+               }
+            }
+
             const snapshot = messages;
             setMessages(optimisticMessages);
 
@@ -218,6 +286,24 @@ export function ChatInterface({
       );
    }, [messages, chatId, setMessages, showToast, requestConfirm, handleCancel]);
 
+   // EDIT: immediately truncate to before this message, delete from DB, re-send with new text.
+   const handleEdit = useCallback((msg: UIMessage, newText: string) => {
+      const idx = messages.findIndex((m) => m.id === msg.id);
+      if (idx === -1) return;
+      const messagesBeforeThis = messages.slice(0, idx);
+      const snapshot = messages;
+      setMessages(messagesBeforeThis);
+      deleteMessagesFromAction(chatId, msg.id).catch((err) => {
+         console.error('[chat] deleteMessagesFromAction failed:', err);
+         setMessages(snapshot);
+         showToast('Edit failed. Please try again.', 'error');
+      });
+      sendMessage({ text: newText });
+   }, [messages, chatId, setMessages, sendMessage, showToast]);
+
+   // Version navigation is display-only: MessageList renders allVersions[cursor] without mutating messages.
+   // No handleRestoreVersion needed — pass undefined so MessageList handles navigation purely in local state.
+
    // ─── Send handler (also used by EmptyState suggestion chips) ──────────────
 
    const handleSend = useCallback((text: string) => {
@@ -227,7 +313,17 @@ export function ChatInterface({
    // ─── Render ───────────────────────────────────────────────────────────────
 
    return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
+         <div className="absolute top-2 right-2 z-10">
+            <button
+               type="button"
+               onClick={() => setShowSystemPrompt(true)}
+               title="System prompt"
+               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
+            >
+               <SlidersHorizontal size={16} />
+            </button>
+         </div>
          <MessageList
             messages={messages}
             isLoading={isLoading}
@@ -235,18 +331,53 @@ export function ChatInterface({
             onRefresh={handleRefresh}
             onCopy={handleCopy}
             onDelete={handleDelete}
+            onEdit={handleEdit}
             pendingAction={pendingAction}
             onConfirm={handleConfirm}
             onCancel={handleCancel}
             onSend={handleSend}
+            pastVersions={pastVersions}
+
          />
          <MessageInput
             onSend={handleSend}
             onNewChat={onNewChat}
             onStop={stop}
             status={status}
+            onArrowUp={() => { }}
          />
          <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+         {showSystemPrompt && (
+            <SystemPromptModal
+               chatId={chatId}
+               initialPrompt={systemPrompt}
+               onClose={() => setShowSystemPrompt(false)}
+               onSave={onUpdateSystemPrompt}
+            />
+         )}
+         {showShortcuts && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowShortcuts(false)}>
+               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-80 p-6" onClick={(e) => e.stopPropagation()}>
+                  <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">Keyboard Shortcuts</h2>
+                  <div className="space-y-2 text-sm">
+                     {([
+                        ['Ctrl+K', 'Search conversations'],
+                        ['Ctrl+N', 'New chat'],
+                        ['Ctrl+Shift+S', 'Toggle sidebar'],
+                        ['↑ (empty input)', 'Edit last message'],
+                        ['?', 'Toggle shortcuts help'],
+                        ['Esc', 'Close dialog / cancel'],
+                     ] as [string, string][]).map(([key, desc]) => (
+                        <div key={key} className="flex justify-between">
+                           <kbd className="px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-mono text-xs">{key}</kbd>
+                           <span className="text-gray-600 dark:text-gray-400">{desc}</span>
+                        </div>
+                     ))}
+                  </div>
+                  <button type="button" onClick={() => setShowShortcuts(false)} className="mt-4 w-full py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">Close</button>
+               </div>
+            </div>
+         )}
       </div>
    );
 }

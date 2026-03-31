@@ -1,7 +1,8 @@
 'use server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { createChat, updateChat, deleteChat, getChats, deleteMessagesFrom } from '@/lib/db/queries';
+import { createChat, updateChat, deleteChat, getChats, deleteMessagesFrom, searchChats, togglePinChat } from '@/lib/db/queries';
+import type { Chat } from '@/lib/db/schema';
 
 // Create a new chat and navigate to it.
 // revalidatePath is called BEFORE redirect so the sidebar data is fresh
@@ -69,4 +70,43 @@ export async function deleteMessagesFromAction(
       );
    }
    revalidatePath(`/chat/${chatId}`);
+}
+
+
+export async function searchChatsAction(query: string): Promise<Chat[]> {
+   return searchChats(query);
+}
+
+// Update the system prompt for a conversation.
+export async function updateSystemPromptAction(chatId: string, systemPrompt: string): Promise<void> {
+   try {
+      await updateChat(chatId, { systemPrompt: (systemPrompt.trim() || null) as string | null });
+   } catch {
+      throw new Error('Failed to update system prompt. Please try again.');
+   }
+   revalidatePath(`/chat/${chatId}`);
+}
+
+export async function generateShareLinkAction(chatId: string): Promise<string> {
+   // Return existing shareId if already set — prevents breaking links on re-share.
+   const chats = await import('@/lib/db/queries');
+   const existing = await chats.getChat(chatId);
+   if (existing?.shareId) return existing.shareId;
+   const shareId = crypto.randomUUID();
+   try {
+      await updateChat(chatId, { shareId });
+   } catch {
+      throw new Error('Failed to generate share link.');
+   }
+   revalidatePath(`/chat/${chatId}`);
+   return shareId;
+}
+
+export async function togglePinChatAction(chatId: string): Promise<void> {
+   try {
+      await togglePinChat(chatId);
+   } catch {
+      throw new Error('Failed to pin/unpin chat.');
+   }
+   revalidatePath('/', 'layout');
 }

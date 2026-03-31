@@ -6,6 +6,8 @@ import {
    createChatAction,
    renameChatAction,
    deleteChatAction,
+   searchChatsAction,
+   togglePinChatAction,
 } from '@/app/actions';
 
 export async function Sidebar() {
@@ -22,6 +24,8 @@ export async function Sidebar() {
          createChatAction={createChatAction}
          renameChatAction={renameChatAction}
          deleteChatAction={deleteChatAction}
+         searchChatsAction={searchChatsAction}
+         togglePinChatAction={togglePinChatAction}
       />
    );
 }

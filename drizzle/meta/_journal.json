@@ -22,6 +22,27 @@
          "when": 1774361290388,
          "tag": "0002_backfill_titled_column",
          "breakpoints": true
+      },
+      {
+         "idx": 3,
+         "version": "7",
+         "when": 1774793387384,
+         "tag": "0003_add_system_prompt",
+         "breakpoints": true
+      },
+      {
+         "idx": 4,
+         "version": "7",
+         "when": 1774793387385,
+         "tag": "0004_add_pinned",
+         "breakpoints": true
+      },
+      {
+         "idx": 5,
+         "version": "7",
+         "when": 1774793387386,
+         "tag": "0005_add_share_id",
+         "breakpoints": true
       }
    ]
 }

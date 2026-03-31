@@ -8,7 +8,7 @@ import {
    type Message,
    type NewMessage,
 } from '@/lib/db/schema';
-import { eq, asc, desc, and, inArray } from 'drizzle-orm';
+import { eq, asc, desc, and, inArray, ilike, not } from 'drizzle-orm';
 import { DEFAULT_CHAT_TITLE } from '@/constants';
 
 // ─── Chat CRUD ─────────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ export async function getChats(): Promise<Chat[]> {
    return db
       .select()
       .from(chats)
-      .orderBy(desc(chats.updatedAt));
+      .orderBy(desc(chats.pinned), desc(chats.updatedAt));
 }
 
 // server-cache-react: wrap with React.cache() so repeated calls within the
@@ -44,8 +44,8 @@ export const getChat = cache(async (chatId: string): Promise<Chat | undefined> =
 
 export async function updateChat(
    chatId: string,
-   // Only 'title' and 'titled' are accepted — updatedAt is always overwritten internally.
-   data: Partial<Pick<Chat, 'title' | 'titled'>>,
+   // Only 'title', 'titled', 'systemPrompt', 'shareId', and 'pinned' are accepted — updatedAt is always overwritten internally.
+   data: Partial<Pick<Chat, 'title' | 'titled' | 'systemPrompt' | 'shareId' | 'pinned'>>,
 ): Promise<void> {
    await db
       .update(chats)
@@ -57,6 +57,33 @@ export async function deleteChat(chatId: string): Promise<void> {
    // CASCADE on FK removes messages automatically
    await db.delete(chats).where(eq(chats.id, chatId));
 }
+
+export async function togglePinChat(chatId: string): Promise<void> {
+   // Single atomic UPDATE — avoids read-then-write race condition.
+   await db
+      .update(chats)
+      .set({ pinned: not(chats.pinned) })
+      .where(eq(chats.id, chatId));
+}
+
+export async function searchChats(query: string): Promise<Chat[]> {
+   if (!query.trim()) return getChats();
+   // Escape LIKE metacharacters so user input is treated as a literal substring.
+   const escaped = query.trim().replace(/[%_\\]/g, '\\$&');
+   return db
+      .select()
+      .from(chats)
+      .where(ilike(chats.title, `%${escaped}%`))
+      .orderBy(desc(chats.updatedAt));
+}
+
+export const getChatByShareId = cache(async (shareId: string): Promise<Chat | undefined> => {
+   const [chat] = await db
+      .select()
+      .from(chats)
+      .where(eq(chats.shareId, shareId));
+   return chat;
+});
 
 // ─── Message CRUD ──────────────────────────────────────────────────────────────
 

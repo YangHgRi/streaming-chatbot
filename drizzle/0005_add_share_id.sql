@@ -1,0 +1,1 @@
+ALTER TABLE "chats" ADD COLUMN IF NOT EXISTS "share_id" text UNIQUE;

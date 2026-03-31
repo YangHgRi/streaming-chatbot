@@ -2,8 +2,9 @@ import type { UIMessage } from 'ai';
 import { getMessages, getChat } from '@/lib/db/queries';
 import { ChatInterface } from '@/components/ChatInterface';
 import { notFound } from 'next/navigation';
-import { createChatAction } from '@/app/actions';
+import { createChatAction, updateSystemPromptAction, generateShareLinkAction } from '@/app/actions';
 import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
+import { ShareButton } from '@/components/ShareButton';
 import { ERROR_SENTINEL_PREFIX } from '@/constants';
 
 export default async function ChatPage({
@@ -44,14 +45,45 @@ export default async function ChatPage({
       });
 
    return (
-      <div className="flex flex-col h-full bg-gray-50">
-         <header className="border-b border-gray-200 bg-white px-4 py-4 flex-shrink-0 flex items-center gap-3">
+      <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-950">
+         <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-4 flex-shrink-0 flex items-center gap-3">
             {/* Mobile hamburger — hidden on md+ (sidebar always visible there) */}
             <MobileSidebarToggle />
-            <h1 className="text-lg font-semibold text-gray-900 truncate" title={chat.title}>{chat.title}</h1>
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white truncate" title={chat.title}>{chat.title}</h1>
+            {/* Export dropdown — zero-JS <details>/<summary> pattern */}
+            {/* Action buttons: Share + Export */}
+            <div className="ml-auto flex items-center gap-1">
+               <ShareButton chatId={chatId} onShare={generateShareLinkAction} />
+               {/* Export dropdown — zero-JS <details>/<summary> pattern */}
+               <details className="relative">
+                  <summary className="list-none cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 text-xs font-medium">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                     </svg>
+                     <span className="hidden sm:inline">Export</span>
+                  </summary>
+                  <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
+                     <a href={`/api/chat/${chatId}/export?format=markdown`} download className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <span>📄</span> Markdown (.md)
+                     </a>
+                     <a href={`/api/chat/${chatId}/export?format=json`} download className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <span>📋</span> JSON
+                     </a>
+                  </div>
+               </details>
+            </div>
          </header>
          <div className="flex-1 overflow-hidden">
-            <ChatInterface chatId={chatId} initialMessages={initialMessages} onNewChat={createChatAction} titled={chat.titled ?? false} />
+            <ChatInterface
+               chatId={chatId}
+               initialMessages={initialMessages}
+               onNewChat={createChatAction}
+               titled={chat.titled ?? false}
+               systemPrompt={chat.systemPrompt ?? ''}
+               onUpdateSystemPrompt={updateSystemPromptAction.bind(null, chatId)}
+            />
          </div>
       </div>
    );

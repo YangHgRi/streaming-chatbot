@@ -65,6 +65,17 @@ function IconTrash() {
    );
 }
 
+function IconEdit() {
+   return (
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" strokeWidth="2"
+         strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      </svg>
+   );
+}
+
 function IconChevronDown({ size = 12 }: { size?: number }) {
    return (
       <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
@@ -120,7 +131,7 @@ function ThinkingLines() {
          {THINKING_LINES.map((line, i) => (
             <div
                key={i}
-               className={`h-3 rounded-full bg-gray-300 blur-[2px] ${line.w} ${line.delay}`}
+               className={`h-3 rounded-full bg-gray-300 dark:bg-gray-600 blur-[2px] ${line.w} ${line.delay}`}
             />
          ))}
       </div>
@@ -133,7 +144,7 @@ function ThinkingLines() {
 function StandaloneThinkingBlock() {
    return (
       <div className="mb-2 flex justify-start animate-fade-in">
-         <div className="max-w-[80%] rounded-lg px-4 py-3 bg-white border border-gray-200">
+         <div className="max-w-[80%] rounded-lg px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             {/* Header */}
             <div className="flex items-center gap-1.5 mb-3">
                <span className="text-gray-400 animate-thinking">
@@ -164,12 +175,12 @@ function ThinkingPill({
    onToggle: () => void;
 }) {
    return (
-      <div className="w-full rounded-lg border border-gray-200 bg-white overflow-hidden mb-1 animate-fade-in">
+      <div className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden mb-1 animate-fade-in">
          {/* Pill header — always visible */}
          <button
             type="button"
             onClick={onToggle}
-            className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center gap-1.5 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
          >
             <span className={`text-gray-400 ${isStreaming ? 'animate-thinking' : ''}`}>
                <IconBrain size={13} />
@@ -184,7 +195,7 @@ function ThinkingPill({
 
          {/* Expanded content */}
          {expanded && (
-            <div className="w-0 min-w-full px-3 pb-3 pt-0.5 border-t border-gray-100 overflow-hidden">
+            <div className="w-0 min-w-full px-3 pb-3 pt-0.5 border-t border-gray-100 dark:border-gray-700 overflow-hidden">
                {isStreaming ? (
                   <ThinkingLines />
                ) : (
@@ -207,7 +218,7 @@ function ConfirmPopover({
    onConfirm,
    onCancel,
 }: {
-   action: 'refresh' | 'delete';
+   action: 'refresh' | 'delete' | 'edit';
    isUser: boolean;
    onConfirm: () => void;
    onCancel: () => void;
@@ -215,8 +226,8 @@ function ConfirmPopover({
    const isDelete = action === 'delete';
    return (
       <div className={`flex items-center gap-2 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
-         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs shadow-sm bg-white border-gray-200">
-            <span className="text-gray-600 font-medium">
+         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs shadow-sm bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <span className="text-gray-600 dark:text-gray-300 font-medium">
                {isDelete ? 'Delete this and all following messages?' : 'Regenerate this response?'}
             </span>
             <button
@@ -230,7 +241,7 @@ function ConfirmPopover({
             <button
                type="button"
                onClick={onCancel}
-               className="px-2 py-0.5 rounded text-gray-500 hover:bg-gray-100 text-xs font-medium transition-colors"
+               className="px-2 py-0.5 rounded text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-medium transition-colors"
             >
                Cancel
             </button>
@@ -247,35 +258,46 @@ function MessageActions({
    onRefresh,
    onCopy,
    onDelete,
+   onEdit,
    isUser,
 }: {
    message: UIMessage;
    onRefresh: (msg: UIMessage) => void;
    onCopy: (msg: UIMessage) => void;
    onDelete: (msg: UIMessage) => void;
+   onEdit: (msg: UIMessage) => void;
    isUser: boolean;
 }) {
    return (
       <div className={`flex items-center gap-0.5 mt-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
-         <div className="flex items-center gap-0.5 bg-white border border-gray-200 rounded-md shadow-sm px-0.5 py-0.5">
+         <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-sm px-0.5 py-0.5">
+            {isUser && (
+               <ActionButton
+                  label="Edit"
+                  onClick={() => onEdit(message)}
+                  className="text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30"
+               >
+                  <IconEdit />
+               </ActionButton>
+            )}
             <ActionButton
                label="Regenerate"
                onClick={() => onRefresh(message)}
-               className="text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+               className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
             >
                <IconRefresh />
             </ActionButton>
             <ActionButton
                label="Copy"
                onClick={() => onCopy(message)}
-               className="text-gray-400 hover:text-green-600 hover:bg-green-50"
+               className="text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30"
             >
                <IconCopy />
             </ActionButton>
             <ActionButton
                label="Delete"
                onClick={() => onDelete(message)}
-               className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+               className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30"
             >
                <IconTrash />
             </ActionButton>
@@ -327,8 +349,8 @@ function EmptyState({ onSend }: { onSend: (text: string) => void }) {
             </svg>
          </div>
          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-1">How can I help you?</h2>
-            <p className="text-sm text-gray-500">Start a conversation or try one of these suggestions</p>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-1">How can I help you?</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Start a conversation or try one of these suggestions</p>
          </div>
          <div className="flex flex-wrap gap-2 justify-center max-w-lg">
             {SUGGESTIONS.map((s) => (
@@ -336,7 +358,7 @@ function EmptyState({ onSend }: { onSend: (text: string) => void }) {
                   key={s}
                   type="button"
                   onClick={() => onSend(s)}
-                  className="px-3 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+                  className="px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors shadow-sm"
                >
                   {s}
                </button>
@@ -350,10 +372,106 @@ function EmptyState({ onSend }: { onSend: (text: string) => void }) {
 
 export interface PendingAction {
    messageId: string;
-   type: 'refresh' | 'delete';
+   type: 'refresh' | 'delete' | 'edit';
+}
+
+// ─── VersionNav ─────────────────────────────────────────────────────────────
+
+function VersionNav({
+   current,
+   total,
+   onPrev,
+   onNext,
+}: {
+   current: number;
+   total: number;
+   onPrev: () => void;
+   onNext: () => void;
+}) {
+   return (
+      <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+         <button
+            type="button"
+            onClick={onPrev}
+            disabled={current <= 1}
+            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+         >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <path d="m15 18-6-6 6-6" />
+            </svg>
+         </button>
+         <span>{current}/{total}</span>
+         <button
+            type="button"
+            onClick={onNext}
+            disabled={current >= total}
+            className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed"
+         >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+               <path d="m9 18 6-6-6-6" />
+            </svg>
+         </button>
+      </div>
+   );
 }
 
 // ─── MessageList ──────────────────────────────────────────────────────────────
+
+// ─── EditForm ─────────────────────────────────────────────────────────────────
+// Inline edit form rendered inside the bubble when editing a user message.
+
+function EditForm({
+   message,
+   onSave,
+   onCancel,
+}: {
+   message: UIMessage;
+   onSave: (newText: string) => void;
+   onCancel: () => void;
+}) {
+   const original = getTextContent(message);
+   const [text, setText] = useState(original);
+
+   const canSave = text.trim().length > 0 && text.trim() !== original.trim();
+
+   const handleSave = () => {
+      if (!canSave) return;
+      onSave(text);
+   };
+
+   return (
+      <div>
+         <textarea
+            autoFocus
+            value={text}
+            rows={Math.max(2, text.split('\n').length)}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+               if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); }
+               if (e.key === 'Escape') { onCancel(); }
+            }}
+            className="w-full resize-none rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white dark:placeholder-gray-400 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+         />
+         <div className="flex gap-2 mt-1 justify-end">
+            <button
+               type="button"
+               onClick={handleSave}
+               disabled={!canSave}
+               className="px-3 py-1 text-xs rounded bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+               Save
+            </button>
+            <button
+               type="button"
+               onClick={onCancel}
+               className="px-3 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+            >
+               Cancel
+            </button>
+         </div>
+      </div>
+   );
+}
 
 export function MessageList({
    messages,
@@ -362,10 +480,13 @@ export function MessageList({
    onRefresh,
    onCopy,
    onDelete,
+   onEdit,
    pendingAction,
    onConfirm,
    onCancel,
    onSend,
+   pastVersions,
+   onRestoreVersion,
 }: {
    messages: UIMessage[];
    isLoading: boolean;
@@ -373,15 +494,20 @@ export function MessageList({
    onRefresh: (msg: UIMessage) => void;
    onCopy: (msg: UIMessage) => void;
    onDelete: (msg: UIMessage) => void;
+   onEdit: (msg: UIMessage, newText: string) => void;
    pendingAction: PendingAction | null;
    onConfirm: () => void;
    onCancel: () => void;
    onSend: (text: string) => void;
+   pastVersions?: Record<string, string[]>;
+   onRestoreVersion?: (userMsgId: string, text: string) => void;
 }) {
    const scrollContainerRef = useRef<HTMLDivElement>(null);
    const bottomRef = useRef<HTMLDivElement>(null);
    const [isNearBottom, setIsNearBottom] = useState(true);
    const [showScrollBtn, setShowScrollBtn] = useState(false);
+   const [editingId, setEditingId] = useState<string | null>(null);
+   const [versionCursors, setVersionCursors] = useState<Record<string, number>>({});
    const rafRef = useRef<number | null>(null);
 
    // ── Smart auto-scroll ──────────────────────────────────────────────────────
@@ -511,12 +637,28 @@ export function MessageList({
             const isError = (message.metadata as Record<string, unknown>)?.isError;
             // Hide action buttons on the actively streaming message
             const isLastAndStreaming = isLoading && message.id === lastMessageId;
-            const hasPendingAction = pendingAction?.messageId === message.id;
+            const hasPendingAction = pendingAction?.messageId === message.id && pendingAction?.type !== 'edit';
+            const isEditing = editingId === message.id;
 
             // Thinking pill state for this message
             const hasThinkingPill = !isUser && thinkingIds.has(message.id);
             const pillExpanded = expandedIds.has(message.id);
             const pillStreaming = isLoading && message.id === lastMessageId && hasThinkingPill;
+
+            // Version navigation for assistant messages
+            const msgIndex = messages.findIndex(m => m.id === message.id);
+            const userMsgBefore = !isUser && msgIndex > 0
+               ? [...messages.slice(0, msgIndex)].reverse().find(m => m.role === 'user')
+               : undefined;
+            const pastVers = (userMsgBefore && pastVersions) ? (pastVersions[userMsgBefore.id] ?? []) : [];
+            const totalVers = pastVers.length + 1;
+            // allVersions: oldest-first. pastVers is stored newest-first (index 0 = most recent old version).
+            // The last slot is the original latest text from the actual message — never overwritten.
+            const latestText = getTextContent(message);
+            const allVersions = [...pastVers].reverse().concat([latestText]);
+            // Default cursor: latest (last index). Cursor only overrides the displayed text; message.parts untouched.
+            const currentVersIdx = versionCursors[userMsgBefore?.id ?? ''] ?? (totalVers - 1);
+            const displayText = totalVers > 1 ? allVersions[currentVersIdx] : latestText;
 
             return (
                <div
@@ -539,13 +681,19 @@ export function MessageList({
                      {/* Bubble */}
                      <div
                         className={`w-full rounded-lg px-4 py-2 ${isUser
-                           ? 'bg-gray-200 text-gray-900'
+                           ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                            : isError
-                              ? 'bg-red-50 border border-red-200 text-red-700'
-                              : 'bg-white border border-gray-200 text-gray-900'
+                              ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+                              : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100'
                            }`}
                      >
-                        {message.role === 'assistant' && isError ? (
+                        {isEditing ? (
+                           <EditForm
+                              message={message}
+                              onSave={(newText) => { onEdit(message, newText); setEditingId(null); }}
+                              onCancel={() => setEditingId(null)}
+                           />
+                        ) : message.role === 'assistant' && isError ? (
                            <span className="text-sm">Something went wrong. Please try again.</span>
                         ) : message.role === 'assistant' ? (
                            <div className="prose prose-sm max-w-none">
@@ -553,7 +701,7 @@ export function MessageList({
                                  remarkPlugins={REMARK_PLUGINS}
                                  components={MD_COMPONENTS}
                               >
-                                 {getTextContent(message)}
+                                 {displayText}
                               </ReactMarkdown>
                            </div>
                         ) : (
@@ -562,14 +710,37 @@ export function MessageList({
                      </div>
                   </div>
 
+                  {/* Version navigation — shown for assistant messages with history */}
+                  {!isUser && totalVers > 1 && userMsgBefore && !isLastAndStreaming && (
+                     <VersionNav
+                        current={currentVersIdx + 1}
+                        total={totalVers}
+                        onPrev={() => {
+                           if (currentVersIdx > 0) {
+                              const newIdx = currentVersIdx - 1;
+                              setVersionCursors(prev => ({ ...prev, [userMsgBefore.id]: newIdx }));
+                              onRestoreVersion?.(userMsgBefore.id, allVersions[newIdx]);
+                           }
+                        }}
+                        onNext={() => {
+                           if (currentVersIdx < totalVers - 1) {
+                              const newIdx = currentVersIdx + 1;
+                              setVersionCursors(prev => ({ ...prev, [userMsgBefore.id]: newIdx }));
+                              onRestoreVersion?.(userMsgBefore.id, allVersions[newIdx]);
+                           }
+                        }}
+                     />
+                  )}
+
                   {/* Action buttons — hidden until bubble is hovered, invisible during streaming */}
-                  {!isLastAndStreaming && (
+                  {!isLastAndStreaming && !isEditing && (
                      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <MessageActions
                            message={message}
                            onRefresh={onRefresh}
                            onCopy={onCopy}
                            onDelete={onDelete}
+                           onEdit={() => setEditingId(message.id)}
                            isUser={isUser}
                         />
                      </div>
@@ -594,7 +765,7 @@ export function MessageList({
          {/* Error bubble */}
          {error && !isLoading && (
             <div className="mb-2 flex justify-start">
-               <div className="max-w-[80%] rounded-lg px-4 py-2 bg-red-50 border border-red-200 text-red-700 text-sm">
+               <div className="max-w-[80%] rounded-lg px-4 py-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
                   Something went wrong. Please try again.
                </div>
             </div>
@@ -608,7 +779,7 @@ export function MessageList({
                type="button"
                onClick={() => scrollToBottom('smooth')}
                aria-label="Scroll to bottom"
-               className="fixed bottom-28 sm:bottom-24 right-6 z-20 w-9 h-9 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-all animate-fade-in"
+               className="fixed bottom-28 sm:bottom-24 right-6 z-20 w-9 h-9 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 transition-all animate-fade-in"
             >
                <IconChevronDown size={16} />
             </button>
