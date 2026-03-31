@@ -25,7 +25,7 @@ Client Components           — Interactivity & streaming state (ChatInterface, 
 **Message streaming flow:**
 1. User sends message → `useChat` (AI SDK) POSTs to `/api/chat`
 2. API route persists the user message to DB **before** calling the LLM (idempotent via `onConflictDoNothing`)
-3. `streamText()` streams the response to the client
+3. `streamText()` streams the response; the LLM context is built from DB history, not the client payload
 4. `onFinish` callback persists the assistant reply; `onError` persists an error sentinel message
 5. After the first assistant response, `/api/chat/[chatId]/title` is called to auto-generate a title
 6. Server Actions use `revalidatePath('/', 'layout')` to invalidate the sidebar cache
@@ -69,7 +69,8 @@ src/
 │   ├── ShareButton.tsx                 # 'use client' — lazy share link generation + copy popup
 │   ├── ThemeProvider.tsx               # Server wrapper re-export from @wrksz/themes/next
 │   ├── ThemeToggle.tsx                 # 'use client' — useSyncExternalStore to avoid hydration mismatch
-│   └── MobileSidebarToggle.tsx         # 'use client' — hamburger menu (hidden on md+)
+│   ├── MobileSidebarToggle.tsx         # 'use client' — hamburger menu (hidden on md+)
+│   └── ExportDropdown.tsx              # 'use client' — export dropdown with outside-click-to-close
 ├── lib/
 │   ├── db/
 │   │   ├── schema.ts                   # Drizzle schema: chats + messages tables

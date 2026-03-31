@@ -29,7 +29,6 @@
 - **删除** 消息（含确认弹出框，5 秒超时自动取消）
 - **重新生成** 回复（刷新，含确认弹出框）
 - **编辑** 用户消息并重新发送
-- **回复版本历史** — 多次重新生成后可查看历史版本
 
 ### 分享与导出
 - **分享链接** — 生成唯一分享 ID，只读视图供任何人访问
@@ -177,7 +176,8 @@ streaming-chatbot/
 │   │   ├── CodeBlock.tsx               # 代码块（语法高亮）
 │   │   ├── ThemeProvider.tsx           # 主题 Provider
 │   │   ├── ThemeToggle.tsx             # 深色/浅色切换按钮
-│   │   └── MobileSidebarToggle.tsx     # 移动端侧边栏切换
+│   │   ├── MobileSidebarToggle.tsx     # 移动端侧边栏切换
+│   │   └── ExportDropdown.tsx          # 导出下拉菜单（点击外部自动关闭）
 │   ├── constants/
 │   │   └── index.ts                    # 全局常量
 │   └── lib/
