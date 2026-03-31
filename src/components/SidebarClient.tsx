@@ -546,7 +546,7 @@ export function SidebarClient({
                )}
             </nav>
             {/* Footer: theme toggle */}
-            <div className="h-12 px-4 border-t border-gray-700 flex items-center justify-between flex-shrink-0">
+            <div className="p-4 border-t border-gray-700 flex items-center justify-between flex-shrink-0">
                <span className="text-xs text-gray-500">Theme</span>
                <ThemeToggle />
             </div>
