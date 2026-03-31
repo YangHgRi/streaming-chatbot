@@ -240,311 +240,318 @@ export function SidebarClient({
                </div>
             </div>
 
-            {/* Scrollable chat list */}
-            <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-               {/* Empty state */}
-               {chats.length === 0 && (
-                  <div className="px-3 py-8 text-center">
-                     <p className="text-sm text-gray-400">No conversations yet</p>
-                     <p className="text-xs text-gray-500 mt-1">Click New Chat to get started</p>
-                  </div>
-               )}
-               {chats.length > 0 && searchQuery && filteredChats.length === 0 && (
-                  <div className="px-3 py-8 text-center">
-                     <p className="text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
-                  </div>
-               )}
-               {searchQuery ? (
-                  filteredChats.map((chat) => {
-                     const isActive = pathname === `/chat/${chat.id}`;
-                     const isEditing = editingId === chat.id;
-                     const isConfirming = confirmingId === chat.id;
+            {/* Scrollable chat list — wrapped in relative container for fade mask */}
+            <div className="relative flex-1 min-h-0">
+               <nav className="h-full overflow-y-auto sidebar-scroll p-2 space-y-1 pb-8">
+                  {/* Empty state */}
+                  {chats.length === 0 && (
+                     <div className="px-3 py-8 text-center">
+                        <p className="text-sm text-gray-400">No conversations yet</p>
+                        <p className="text-xs text-gray-500 mt-1">Click New Chat to get started</p>
+                     </div>
+                  )}
+                  {chats.length > 0 && searchQuery && filteredChats.length === 0 && (
+                     <div className="px-3 py-8 text-center">
+                        <p className="text-sm text-gray-400">No results for &ldquo;{searchQuery}&rdquo;</p>
+                     </div>
+                  )}
+                  {searchQuery ? (
+                     filteredChats.map((chat) => {
+                        const isActive = pathname === `/chat/${chat.id}`;
+                        const isEditing = editingId === chat.id;
+                        const isConfirming = confirmingId === chat.id;
 
-                     return (
-                        <div
-                           key={chat.id}
-                           className={[
-                              'group flex items-center gap-1 rounded-lg',
-                              isActive
-                                 ? 'bg-gray-700 border-l-2 border-blue-500'
-                                 : 'hover:bg-gray-800 border-l-2 border-transparent',
-                           ].join(' ')}
-                        >
-                           {isEditing ? (
-                              <RenameInput
-                                 chatId={chat.id}
-                                 defaultTitle={chat.title}
-                                 renameChatAction={renameChatAction}
-                                 onDone={() => setEditingId(null)}
-                              />
-                           ) : (
-                              <Link
-                                 href={`/chat/${chat.id}`}
-                                 title={chat.title}
-                                 className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'
-                                    }`}
-                              >
-                                 {chat.title}
-                              </Link>
-                           )}
+                        return (
+                           <div
+                              key={chat.id}
+                              className={[
+                                 'group flex items-center gap-1 rounded-lg',
+                                 isActive
+                                    ? 'bg-gray-700 border-l-2 border-blue-500'
+                                    : 'hover:bg-gray-800 border-l-2 border-transparent',
+                              ].join(' ')}
+                           >
+                              {isEditing ? (
+                                 <RenameInput
+                                    chatId={chat.id}
+                                    defaultTitle={chat.title}
+                                    renameChatAction={renameChatAction}
+                                    onDone={() => setEditingId(null)}
+                                 />
+                              ) : (
+                                 <Link
+                                    href={`/chat/${chat.id}`}
+                                    title={chat.title}
+                                    className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'
+                                       }`}
+                                 >
+                                    {chat.title}
+                                 </Link>
+                              )}
 
-                           {!isEditing && (
-                              <div
-                                 className={[
-                                    'items-center gap-1 pr-2 flex-shrink-0',
-                                    isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
-                                 ].join(' ')}
-                              >
-                                 {isConfirming ? (
-                                    <>
-                                       <button
-                                          type="button"
-                                          disabled={isPending}
-                                          onClick={() =>
-                                             startTransition(() => deleteChatAction(chat.id))
-                                          }
-                                          className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
-                                       >
-                                          Delete
-                                       </button>
-                                       <button
-                                          type="button"
-                                          onClick={() => setConfirmingId(null)}
-                                          className="text-xs text-gray-400 hover:text-gray-300"
-                                       >
-                                          Cancel
-                                       </button>
-                                    </>
-                                 ) : (
-                                    <>
-                                       <button
-                                          type="button"
-                                          aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
-                                          onClick={() => startTransition(() => togglePinChatAction(chat.id))}
-                                          className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
-                                       >
-                                          {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
-                                       </button>
-                                       <button
-                                          type="button"
-                                          aria-label="Rename conversation"
-                                          onClick={() => setEditingId(chat.id)}
-                                          className="p-1 rounded text-gray-400 hover:text-gray-200"
-                                       >
-                                          <Pencil size={14} />
-                                       </button>
-                                       <button
-                                          type="button"
-                                          aria-label="Delete conversation"
-                                          onClick={() => setConfirmingId(chat.id)}
-                                          className="p-1 rounded text-gray-400 hover:text-red-400"
-                                       >
-                                          <Trash2 size={14} />
-                                       </button>
-                                    </>
-                                 )}
-                              </div>
-                           )}
-                        </div>
-                     );
-                  })
-               ) : (
-                  (() => {
-                     const pinnedChats = filteredChats.filter(c => c.pinned);
-                     const unpinnedChats = filteredChats.filter(c => !c.pinned);
-                     return (
-                        <>
-                           {pinnedChats.length > 0 && (
-                              <div key="pinned">
-                                 <p className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">Pinned</p>
-                                 {pinnedChats.map((chat) => {
-                                    const isActive = pathname === `/chat/${chat.id}`;
-                                    const isEditing = editingId === chat.id;
-                                    const isConfirming = confirmingId === chat.id;
-                                    return (
-                                       <div
-                                          key={chat.id}
-                                          className={[
-                                             'group flex items-center gap-1 rounded-lg',
-                                             isActive
-                                                ? 'bg-gray-700 border-l-2 border-blue-500'
-                                                : 'hover:bg-gray-800 border-l-2 border-transparent',
-                                          ].join(' ')}
-                                       >
-                                          {isEditing ? (
-                                             <RenameInput
-                                                chatId={chat.id}
-                                                defaultTitle={chat.title}
-                                                renameChatAction={renameChatAction}
-                                                onDone={() => setEditingId(null)}
-                                             />
-                                          ) : (
-                                             <Link
-                                                href={`/chat/${chat.id}`}
-                                                title={chat.title}
-                                                className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'}`}
-                                             >
-                                                {chat.title}
-                                             </Link>
-                                          )}
-                                          {!isEditing && (
-                                             <div
-                                                className={[
-                                                   'items-center gap-1 pr-2 flex-shrink-0',
-                                                   isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
-                                                ].join(' ')}
-                                             >
-                                                {isConfirming ? (
-                                                   <>
-                                                      <button
-                                                         type="button"
-                                                         disabled={isPending}
-                                                         onClick={() => startTransition(() => deleteChatAction(chat.id))}
-                                                         className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
-                                                      >
-                                                         Delete
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         onClick={() => setConfirmingId(null)}
-                                                         className="text-xs text-gray-400 hover:text-gray-300"
-                                                      >
-                                                         Cancel
-                                                      </button>
-                                                   </>
-                                                ) : (
-                                                   <>
-                                                      <button
-                                                         type="button"
-                                                         aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
-                                                         onClick={() => startTransition(() => togglePinChatAction(chat.id))}
-                                                         className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
-                                                      >
-                                                         {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         aria-label="Rename conversation"
-                                                         onClick={() => setEditingId(chat.id)}
-                                                         className="p-1 rounded text-gray-400 hover:text-gray-200"
-                                                      >
-                                                         <Pencil size={14} />
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         aria-label="Delete conversation"
-                                                         onClick={() => setConfirmingId(chat.id)}
-                                                         className="p-1 rounded text-gray-400 hover:text-red-400"
-                                                      >
-                                                         <Trash2 size={14} />
-                                                      </button>
-                                                   </>
-                                                )}
-                                             </div>
-                                          )}
-                                       </div>
-                                    );
-                                 })}
-                              </div>
-                           )}
-                           {groupChatsByDate(unpinnedChats).map((group) => (
-                              <div key={group.label}>
-                                 <p className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">{group.label}</p>
-                                 {group.chats.map((chat) => {
-                                    const isActive = pathname === `/chat/${chat.id}`;
-                                    const isEditing = editingId === chat.id;
-                                    const isConfirming = confirmingId === chat.id;
-                                    return (
-                                       <div
-                                          key={chat.id}
-                                          className={[
-                                             'group flex items-center gap-1 rounded-lg',
-                                             isActive
-                                                ? 'bg-gray-700 border-l-2 border-blue-500'
-                                                : 'hover:bg-gray-800 border-l-2 border-transparent',
-                                          ].join(' ')}
-                                       >
-                                          {isEditing ? (
-                                             <RenameInput
-                                                chatId={chat.id}
-                                                defaultTitle={chat.title}
-                                                renameChatAction={renameChatAction}
-                                                onDone={() => setEditingId(null)}
-                                             />
-                                          ) : (
-                                             <Link
-                                                href={`/chat/${chat.id}`}
-                                                title={chat.title}
-                                                className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'}`}
-                                             >
-                                                {chat.title}
-                                             </Link>
-                                          )}
-                                          {!isEditing && (
-                                             <div
-                                                className={[
-                                                   'items-center gap-1 pr-2 flex-shrink-0',
-                                                   isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
-                                                ].join(' ')}
-                                             >
-                                                {isConfirming ? (
-                                                   <>
-                                                      <button
-                                                         type="button"
-                                                         disabled={isPending}
-                                                         onClick={() => startTransition(() => deleteChatAction(chat.id))}
-                                                         className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
-                                                      >
-                                                         Delete
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         onClick={() => setConfirmingId(null)}
-                                                         className="text-xs text-gray-400 hover:text-gray-300"
-                                                      >
-                                                         Cancel
-                                                      </button>
-                                                   </>
-                                                ) : (
-                                                   <>
-                                                      <button
-                                                         type="button"
-                                                         aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
-                                                         onClick={() => startTransition(() => togglePinChatAction(chat.id))}
-                                                         className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
-                                                      >
-                                                         {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         aria-label="Rename conversation"
-                                                         onClick={() => setEditingId(chat.id)}
-                                                         className="p-1 rounded text-gray-400 hover:text-gray-200"
-                                                      >
-                                                         <Pencil size={14} />
-                                                      </button>
-                                                      <button
-                                                         type="button"
-                                                         aria-label="Delete conversation"
-                                                         onClick={() => setConfirmingId(chat.id)}
-                                                         className="p-1 rounded text-gray-400 hover:text-red-400"
-                                                      >
-                                                         <Trash2 size={14} />
-                                                      </button>
-                                                   </>
-                                                )}
-                                             </div>
-                                          )}
-                                       </div>
-                                    );
-                                 })}
-                              </div>
-                           ))}
-                        </>
-                     );
-                  })()
-               )}
-            </nav>
+                              {!isEditing && (
+                                 <div
+                                    className={[
+                                       'items-center gap-1 pr-2 flex-shrink-0',
+                                       isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
+                                    ].join(' ')}
+                                 >
+                                    {isConfirming ? (
+                                       <>
+                                          <button
+                                             type="button"
+                                             disabled={isPending}
+                                             onClick={() =>
+                                                startTransition(() => deleteChatAction(chat.id))
+                                             }
+                                             className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
+                                          >
+                                             Delete
+                                          </button>
+                                          <button
+                                             type="button"
+                                             onClick={() => setConfirmingId(null)}
+                                             className="text-xs text-gray-400 hover:text-gray-300"
+                                          >
+                                             Cancel
+                                          </button>
+                                       </>
+                                    ) : (
+                                       <>
+                                          <button
+                                             type="button"
+                                             aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
+                                             onClick={() => startTransition(() => togglePinChatAction(chat.id))}
+                                             className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
+                                          >
+                                             {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                          </button>
+                                          <button
+                                             type="button"
+                                             aria-label="Rename conversation"
+                                             onClick={() => setEditingId(chat.id)}
+                                             className="p-1 rounded text-gray-400 hover:text-gray-200"
+                                          >
+                                             <Pencil size={14} />
+                                          </button>
+                                          <button
+                                             type="button"
+                                             aria-label="Delete conversation"
+                                             onClick={() => setConfirmingId(chat.id)}
+                                             className="p-1 rounded text-gray-400 hover:text-red-400"
+                                          >
+                                             <Trash2 size={14} />
+                                          </button>
+                                       </>
+                                    )}
+                                 </div>
+                              )}
+                           </div>
+                        );
+                     })
+                  ) : (
+                     (() => {
+                        const pinnedChats = filteredChats.filter(c => c.pinned);
+                        const unpinnedChats = filteredChats.filter(c => !c.pinned);
+                        return (
+                           <>
+                              {pinnedChats.length > 0 && (
+                                 <div key="pinned">
+                                    <p className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">Pinned</p>
+                                    {pinnedChats.map((chat) => {
+                                       const isActive = pathname === `/chat/${chat.id}`;
+                                       const isEditing = editingId === chat.id;
+                                       const isConfirming = confirmingId === chat.id;
+                                       return (
+                                          <div
+                                             key={chat.id}
+                                             className={[
+                                                'group flex items-center gap-1 rounded-lg',
+                                                isActive
+                                                   ? 'bg-gray-700 border-l-2 border-blue-500'
+                                                   : 'hover:bg-gray-800 border-l-2 border-transparent',
+                                             ].join(' ')}
+                                          >
+                                             {isEditing ? (
+                                                <RenameInput
+                                                   chatId={chat.id}
+                                                   defaultTitle={chat.title}
+                                                   renameChatAction={renameChatAction}
+                                                   onDone={() => setEditingId(null)}
+                                                />
+                                             ) : (
+                                                <Link
+                                                   href={`/chat/${chat.id}`}
+                                                   title={chat.title}
+                                                   className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'}`}
+                                                >
+                                                   {chat.title}
+                                                </Link>
+                                             )}
+                                             {!isEditing && (
+                                                <div
+                                                   className={[
+                                                      'items-center gap-1 pr-2 flex-shrink-0',
+                                                      isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
+                                                   ].join(' ')}
+                                                >
+                                                   {isConfirming ? (
+                                                      <>
+                                                         <button
+                                                            type="button"
+                                                            disabled={isPending}
+                                                            onClick={() => startTransition(() => deleteChatAction(chat.id))}
+                                                            className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
+                                                         >
+                                                            Delete
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            onClick={() => setConfirmingId(null)}
+                                                            className="text-xs text-gray-400 hover:text-gray-300"
+                                                         >
+                                                            Cancel
+                                                         </button>
+                                                      </>
+                                                   ) : (
+                                                      <>
+                                                         <button
+                                                            type="button"
+                                                            aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
+                                                            onClick={() => startTransition(() => togglePinChatAction(chat.id))}
+                                                            className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
+                                                         >
+                                                            {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            aria-label="Rename conversation"
+                                                            onClick={() => setEditingId(chat.id)}
+                                                            className="p-1 rounded text-gray-400 hover:text-gray-200"
+                                                         >
+                                                            <Pencil size={14} />
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            aria-label="Delete conversation"
+                                                            onClick={() => setConfirmingId(chat.id)}
+                                                            className="p-1 rounded text-gray-400 hover:text-red-400"
+                                                         >
+                                                            <Trash2 size={14} />
+                                                         </button>
+                                                      </>
+                                                   )}
+                                                </div>
+                                             )}
+                                          </div>
+                                       );
+                                    })}
+                                 </div>
+                              )}
+                              {groupChatsByDate(unpinnedChats).map((group) => (
+                                 <div key={group.label}>
+                                    <p className="px-3 py-1 text-xs font-medium text-gray-500 uppercase tracking-wide">{group.label}</p>
+                                    {group.chats.map((chat) => {
+                                       const isActive = pathname === `/chat/${chat.id}`;
+                                       const isEditing = editingId === chat.id;
+                                       const isConfirming = confirmingId === chat.id;
+                                       return (
+                                          <div
+                                             key={chat.id}
+                                             className={[
+                                                'group flex items-center gap-1 rounded-lg',
+                                                isActive
+                                                   ? 'bg-gray-700 border-l-2 border-blue-500'
+                                                   : 'hover:bg-gray-800 border-l-2 border-transparent',
+                                             ].join(' ')}
+                                          >
+                                             {isEditing ? (
+                                                <RenameInput
+                                                   chatId={chat.id}
+                                                   defaultTitle={chat.title}
+                                                   renameChatAction={renameChatAction}
+                                                   onDone={() => setEditingId(null)}
+                                                />
+                                             ) : (
+                                                <Link
+                                                   href={`/chat/${chat.id}`}
+                                                   title={chat.title}
+                                                   className={`flex-1 min-w-0 px-3 py-2 text-sm truncate block ${isActive ? 'text-white' : 'text-gray-100'}`}
+                                                >
+                                                   {chat.title}
+                                                </Link>
+                                             )}
+                                             {!isEditing && (
+                                                <div
+                                                   className={[
+                                                      'items-center gap-1 pr-2 flex-shrink-0',
+                                                      isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
+                                                   ].join(' ')}
+                                                >
+                                                   {isConfirming ? (
+                                                      <>
+                                                         <button
+                                                            type="button"
+                                                            disabled={isPending}
+                                                            onClick={() => startTransition(() => deleteChatAction(chat.id))}
+                                                            className="text-xs text-red-400 hover:text-red-300 font-medium disabled:opacity-50 disabled:pointer-events-none"
+                                                         >
+                                                            Delete
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            onClick={() => setConfirmingId(null)}
+                                                            className="text-xs text-gray-400 hover:text-gray-300"
+                                                         >
+                                                            Cancel
+                                                         </button>
+                                                      </>
+                                                   ) : (
+                                                      <>
+                                                         <button
+                                                            type="button"
+                                                            aria-label={chat.pinned ? 'Unpin conversation' : 'Pin conversation'}
+                                                            onClick={() => startTransition(() => togglePinChatAction(chat.id))}
+                                                            className={`p-1 rounded ${chat.pinned ? 'text-yellow-400 hover:text-yellow-300' : 'text-gray-400 hover:text-yellow-400'}`}
+                                                         >
+                                                            {chat.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            aria-label="Rename conversation"
+                                                            onClick={() => setEditingId(chat.id)}
+                                                            className="p-1 rounded text-gray-400 hover:text-gray-200"
+                                                         >
+                                                            <Pencil size={14} />
+                                                         </button>
+                                                         <button
+                                                            type="button"
+                                                            aria-label="Delete conversation"
+                                                            onClick={() => setConfirmingId(chat.id)}
+                                                            className="p-1 rounded text-gray-400 hover:text-red-400"
+                                                         >
+                                                            <Trash2 size={14} />
+                                                         </button>
+                                                      </>
+                                                   )}
+                                                </div>
+                                             )}
+                                          </div>
+                                       );
+                                    })}
+                                 </div>
+                              ))}
+                           </>
+                        );
+                     })()
+                  )}
+               </nav>
+               {/* Bottom fade mask — hints there is more content below */}
+               <div
+                  className="pointer-events-none absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-gray-900 to-transparent"
+                  aria-hidden="true"
+               />
+            </div>
             {/* Footer: theme toggle */}
             <div className="py-[22px] px-4 border-t border-gray-700 flex items-center justify-between flex-shrink-0">
                <span className="text-sm text-gray-400">Theme</span>
