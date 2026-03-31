@@ -56,7 +56,7 @@ export function ShareButton({ chatId, onShare }: { chatId: string; onShare: (cha
             onClick={handleShare}
             disabled={loading}
             title="Share conversation"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-medium"
+            className="cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 text-xs font-medium"
          >
             <Share2 size={15} />
             <span className="hidden sm:inline">{loading ? 'Sharing…' : 'Share'}</span>
@@ -93,8 +93,8 @@ export function ShareButton({ chatId, onShare }: { chatId: string; onShare: (cha
                      onClick={handleCopy}
                      title={copied ? 'Copied!' : 'Copy link'}
                      className={`flex-shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors font-medium ${copied
-                           ? 'bg-green-500 border-green-500 text-white'
-                           : 'bg-blue-500 hover:bg-blue-600 border-blue-500 text-white'
+                        ? 'bg-green-500 border-green-500 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 border-blue-500 text-white'
                         }`}
                   >
                      {copied ? <Check size={12} /> : <Copy size={12} />}

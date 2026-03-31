@@ -20,7 +20,7 @@ export function SystemPromptButton({
             type="button"
             onClick={() => setOpen(true)}
             title="System prompt"
-            className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 text-xs font-medium"
+            className="cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 text-xs font-medium"
          >
             <SlidersHorizontal size={15} />
             <span className="hidden sm:inline">Prompt</span>
