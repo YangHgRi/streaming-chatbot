@@ -71,7 +71,6 @@ export function CodeBlock({ inline, className, children }: CodeBlockProps) {
             customStyle={{
                margin: 0,
                borderRadius: 0,
-               fontSize: '1em',
                padding: '1rem',
             }}
             PreTag="div"

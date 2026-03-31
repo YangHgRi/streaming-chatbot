@@ -473,7 +473,7 @@ export function MessageList({
                         ) : message.role === ROLE_ASSISTANT && isLastAndStreaming ? (
                            <DotPulse inline />
                         ) : message.role === ROLE_ASSISTANT ? (
-                           <div className="prose prose-sm dark:prose-invert max-w-none">
+                           <div className="prose dark:prose-invert max-w-none">
                               <ReactMarkdown
                                  remarkPlugins={REMARK_PLUGINS}
                                  components={MD_COMPONENTS}
