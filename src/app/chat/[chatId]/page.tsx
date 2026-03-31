@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { createChatAction, updateSystemPromptAction, generateShareLinkAction } from '@/app/actions';
 import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
 import { ShareButton } from '@/components/ShareButton';
+import { SystemPromptButton } from '@/components/SystemPromptButton';
 import { ERROR_SENTINEL_PREFIX } from '@/constants';
 
 export default async function ChatPage({
@@ -56,7 +57,7 @@ export default async function ChatPage({
                <ShareButton chatId={chatId} onShare={generateShareLinkAction} />
                {/* Export dropdown — zero-JS <details>/<summary> pattern */}
                <details className="relative">
-                  <summary className="list-none cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 text-xs font-medium">
+                  <summary className="list-none cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 text-xs font-medium">
                      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
@@ -73,6 +74,11 @@ export default async function ChatPage({
                      </a>
                   </div>
                </details>
+               <SystemPromptButton
+                  chatId={chatId}
+                  initialPrompt={chat.systemPrompt ?? ''}
+                  onSave={updateSystemPromptAction.bind(null, chatId)}
+               />
             </div>
          </header>
          <div className="flex-1 overflow-hidden">

@@ -8,7 +8,6 @@ import { MessageInput } from './MessageInput';
 import { deleteMessagesFromAction } from '@/app/actions';
 import { getTextContent } from '@/lib/getTextContent';
 import { SystemPromptModal } from './SystemPromptModal';
-import { SlidersHorizontal } from 'lucide-react';
 import { useSidebar } from './SidebarProvider';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -314,16 +313,6 @@ export function ChatInterface({
 
    return (
       <div className="flex flex-col h-full relative">
-         <div className="absolute top-2 right-2 z-10">
-            <button
-               type="button"
-               onClick={() => setShowSystemPrompt(true)}
-               title="System prompt"
-               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors"
-            >
-               <SlidersHorizontal size={16} />
-            </button>
-         </div>
          <MessageList
             messages={messages}
             isLoading={isLoading}
