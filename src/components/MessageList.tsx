@@ -696,7 +696,7 @@ export function MessageList({
                         ) : message.role === 'assistant' && isError ? (
                            <span className="text-sm">Something went wrong. Please try again.</span>
                         ) : message.role === 'assistant' ? (
-                           <div className="prose prose-sm max-w-none">
+                           <div className="prose prose-sm dark:prose-invert max-w-none">
                               <ReactMarkdown
                                  remarkPlugins={REMARK_PLUGINS}
                                  components={MD_COMPONENTS}

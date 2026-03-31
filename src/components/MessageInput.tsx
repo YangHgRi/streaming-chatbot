@@ -43,7 +43,7 @@ export function MessageInput({
    }
 
    return (
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 flex gap-2 items-end">
+      <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 flex gap-2 items-center">
          {/* New Chat button — left of textarea */}
          <button
             type="button"
