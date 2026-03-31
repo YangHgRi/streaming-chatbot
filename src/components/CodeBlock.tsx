@@ -37,7 +37,7 @@ export function CodeBlock({ inline, className, children }: CodeBlockProps) {
 
    if (inline || !language) {
       return (
-         <code className="bg-gray-100 text-gray-800 rounded px-1 py-0.5 text-[0.85em] font-mono">
+         <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded px-1 py-0.5 text-[0.85em] font-mono">
             {children}
          </code>
       );
