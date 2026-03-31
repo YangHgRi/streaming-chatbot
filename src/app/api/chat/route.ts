@@ -94,9 +94,6 @@ export async function POST(req: Request) {
    }
 
    // ── STEP 2: Build canonical history from DB ────────────────────────────────
-   // Use DB as source of truth instead of the client-provided messages array.
-   // This prevents stale useChat closures or incomplete streaming state from
-   // corrupting the conversation context sent to the LLM.
    const dbMsgs = await getMessages(chatId);
    const historyMessages: UIMessage[] = dbMsgs
       .filter((m): m is typeof m & { role: typeof ROLE_USER | typeof ROLE_ASSISTANT } =>
