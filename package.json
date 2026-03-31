@@ -17,6 +17,7 @@
       "@ai-sdk/react": "3.0.139",
       "@tailwindcss/typography": "^0.5.19",
       "@types/react-syntax-highlighter": "^15.5.13",
+      "@wrksz/themes": "^0.7.9",
       "ai": "6.0.137",
       "drizzle-orm": "0.45.1",
       "lucide-react": "^1.6.0",
