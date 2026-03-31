@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { Sidebar } from "@/components/Sidebar";
 import { SidebarProvider } from "@/components/SidebarProvider";
 import "./globals.css";
@@ -31,9 +32,13 @@ export default function RootLayout({
          className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       >
          <head>
-            <script dangerouslySetInnerHTML={{
-               __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`
-            }} />
+            <Script
+               id="theme-init"
+               strategy="beforeInteractive"
+               dangerouslySetInnerHTML={{
+                  __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`
+               }}
+            />
          </head>
          <body className="h-full flex overflow-hidden">
             {/* Skip-to-content link for keyboard users */}
