@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Tell Tailwind v4 that the `dark:` variant means "inside .dark class",
+ * not the default prefers-color-scheme media query. */
+@variant dark (&:where(.dark, .dark *));
+
 :root {
    --background: #ffffff;
    --foreground: #171717;

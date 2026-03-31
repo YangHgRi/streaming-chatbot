@@ -213,7 +213,7 @@ export function SidebarClient({
             </div>
 
             {/* Search input */}
-            <div className="px-3 pb-2">
+            <div className="px-3 py-2">
                <div className="relative">
                   <svg
                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -234,7 +234,7 @@ export function SidebarClient({
                      type="search"
                      value={searchQuery}
                      onChange={(e) => setSearchQuery(e.target.value)}
-                     placeholder="Search conversations\u2026"
+                     placeholder="Search conversations…"
                      className="w-full bg-gray-800 text-white text-sm rounded-lg pl-8 pr-3 py-1.5 placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-blue-500"
                   />
                </div>

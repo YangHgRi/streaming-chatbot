@@ -464,7 +464,7 @@ function EditForm({
             <button
                type="button"
                onClick={onCancel}
-               className="px-3 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+               className="px-3 py-1 text-xs rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             >
                Cancel
             </button>
