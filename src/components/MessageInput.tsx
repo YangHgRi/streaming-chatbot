@@ -79,7 +79,7 @@ export function MessageInput({
             placeholder="Type a message… (Shift+Enter for new line)"
             className="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 p-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
             rows={1}
-            style={{ maxHeight: '200px' }}
+            style={{ minHeight: '46px', maxHeight: '200px' }}
          />
          {/* Stop button — shown only while streaming */}
          {isStreaming ? (
