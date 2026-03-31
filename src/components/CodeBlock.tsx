@@ -12,7 +12,7 @@ const SyntaxHighlighter = dynamic<SyntaxHighlighterProps>(
       ssr: false,
       loading: ({ error }) =>
          error ? null : (
-            <pre className="m-0 p-4 text-[0.85em] bg-gray-900 overflow-x-auto" />
+            <pre className="m-0 p-4 text-[0.9em] bg-gray-900 overflow-x-auto" />
          ),
    },
 );
@@ -37,7 +37,7 @@ export function CodeBlock({ inline, className, children }: CodeBlockProps) {
 
    if (inline || !language) {
       return (
-         <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded px-1 py-0.5 text-[0.85em] font-mono">
+         <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded px-1 py-0.5 text-[0.9em] font-mono">
             {children}
          </code>
       );
@@ -71,7 +71,7 @@ export function CodeBlock({ inline, className, children }: CodeBlockProps) {
             customStyle={{
                margin: 0,
                borderRadius: 0,
-               fontSize: '0.85em',
+               fontSize: '0.9em',
                padding: '1rem',
             }}
             PreTag="div"
