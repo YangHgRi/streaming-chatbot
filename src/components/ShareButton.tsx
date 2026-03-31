@@ -92,7 +92,7 @@ export function ShareButton({ chatId, onShare }: { chatId: string; onShare: (cha
                      type="button"
                      onClick={handleCopy}
                      title={copied ? 'Copied!' : 'Copy link'}
-                     className={`shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors font-medium ${
+                     className={`shrink-0 flex items-center gap-1 px-2 py-1.5 text-xs rounded border transition-colors font-medium ${copied
                         ? 'bg-green-500 border-green-500 text-white'
                         : 'bg-blue-500 hover:bg-blue-600 border-blue-500 text-white'
                         }`}
