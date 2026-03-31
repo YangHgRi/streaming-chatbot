@@ -149,3 +149,43 @@ export async function deleteMessagesFrom(
          ),
       );
 }
+
+
+// Delete fromMessageId and all messages after it, then atomically insert a new
+// message in the same transaction — used by the refresh flow so that the old AI
+// message and the new one are swapped without any window where both (or neither)
+// exist in the DB.
+export async function replaceMessagesFrom(
+   chatId: string,
+   fromMessageId: string,
+   newMessage: Omit<NewMessage, 'createdAt'>,
+): Promise<void> {
+   // Determine which rows to delete before opening the transaction so the
+   // SELECT does not hold a lock longer than necessary.
+   const allMessages = await db
+      .select({ id: messages.id })
+      .from(messages)
+      .where(eq(messages.chatId, chatId))
+      .orderBy(asc(messages.createdAt), asc(messages.id));
+
+   const anchorIndex = allMessages.findIndex((m) => m.id === fromMessageId);
+   if (anchorIndex === -1) {
+      // Anchor already gone — just insert the new message.
+      await db.insert(messages).values(newMessage).onConflictDoNothing();
+      return;
+   }
+
+   const idsToDelete = allMessages.slice(anchorIndex).map((m) => m.id);
+
+   await db.transaction(async (tx) => {
+      await tx
+         .delete(messages)
+         .where(
+            and(
+               eq(messages.chatId, chatId),
+               inArray(messages.id, idsToDelete),
+            ),
+         );
+      await tx.insert(messages).values(newMessage).onConflictDoNothing();
+   });
+}

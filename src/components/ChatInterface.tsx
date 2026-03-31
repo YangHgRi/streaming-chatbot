@@ -193,8 +193,8 @@ export function ChatInterface({
 
    // ─── Message action handlers ───────────────────────────────────────────────
 
-   // REFRESH: only for AI messages — keep everything before it, delete it and
-   // everything after it from DB, then call reload() (no new user message appended).
+   // REFRESH: only for AI messages — optimistically trim the UI, then let the
+   // server atomically replace the old message with the new reply.
    const handleRefresh = useCallback((msg: UIMessage) => {
       handleCancel(); // dismiss any other pending action
       requestConfirm(
@@ -203,26 +203,15 @@ export function ChatInterface({
             const idx = messages.findIndex((m) => m.id === msg.id);
             if (idx === -1) return;
 
-            // Keep all messages strictly before the target AI message.
-            const messagesBeforeThis = messages.slice(0, idx);
-
-
-            const snapshot = messages;
             // Optimistically update UI: show only messages before the target.
-            setMessages(messagesBeforeThis);
+            setMessages(messages.slice(0, idx));
 
-            // Delete target AI message and everything after it from DB.
-            deleteMessagesFromAction(chatId, msg.id).catch((err) => {
-               console.error('[chat] deleteMessagesFromAction failed:', err);
-               setMessages(snapshot);
-               showToast('Action failed. Please try again.', 'error');
-            });
-
-            // Re-generate the AI response without appending a new user message.
-            regenerate();
+            // Pass deleteFromId to the server so it can atomically delete the old
+            // message(s) and insert the new reply in a single transaction.
+            regenerate({ body: { deleteFromId: msg.id } });
          },
       );
-   }, [messages, chatId, setMessages, regenerate, showToast, requestConfirm, handleCancel]);
+   }, [messages, chatId, setMessages, regenerate, requestConfirm, handleCancel]);
 
    // COPY: immediate, no confirm needed.
    const handleCopy = useCallback(async (msg: UIMessage) => {

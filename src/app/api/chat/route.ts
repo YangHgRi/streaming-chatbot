@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createMessage, updateChat, getChat, getMessages } from '@/lib/db/queries';
+import { createMessage, updateChat, getChat, getMessages, replaceMessagesFrom } from '@/lib/db/queries';
 import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 // Validate OPENAI_API_KEY at module load for a clear error in dev
@@ -26,14 +26,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
    // Parse body safely — malformed JSON returns 400 instead of 500
-   let body: { id?: unknown; messages?: unknown };
+   let body: { id?: unknown; messages?: unknown; deleteFromId?: unknown };
    try {
       body = await req.json();
    } catch {
       return new Response('Invalid JSON body', { status: 400 });
    }
 
-   const { id: chatId, messages } = body;
+   const { id: chatId, messages, deleteFromId } = body;
+   const isRefresh = typeof deleteFromId === 'string' && deleteFromId.length > 0;
 
    // Validate chatId — required to associate messages with a conversation
    if (!chatId || typeof chatId !== 'string') {
@@ -53,52 +54,59 @@ export async function POST(req: Request) {
    }
 
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
-   // User message is saved exactly once, outside the retry loop.
-   const lastMessage = messages.at(-1) as Record<string, unknown>;
-   if (lastMessage.role === ROLE_USER) {
-      // Use explicit type guard instead of inline cast
-      const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
-      const content = parts
-         .filter((p): p is { type: 'text'; text: string } => {
-            // Verify BOTH type === 'text' AND that text is a string to avoid
-            if (typeof p !== 'object' || p === null) return false;
-            const r = p as Record<string, unknown>;
-            return r.type === 'text' && typeof r.text === 'string';
-         })
-         .map((p) => p.text)
-         .join('');
+   // Skipped on refresh: the user message already exists in the DB.
+   if (!isRefresh) {
+      const lastMessage = messages.at(-1) as Record<string, unknown>;
+      if (lastMessage.role === ROLE_USER) {
+         // Use explicit type guard instead of inline cast to validate parts.
+         const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
+         const content = parts
+            .filter((p): p is { type: 'text'; text: string } => {
+               // Verify both type === 'text' and that text is a string.
+               if (typeof p !== 'object' || p === null) return false;
+               const r = p as Record<string, unknown>;
+               return r.type === 'text' && typeof r.text === 'string';
+            })
+            .map((p) => p.text)
+            .join('');
 
-      // Skip insert when there is no text content — e.g. a message composed
-      // entirely of non-text parts.
-      if (!content) {
-         return new Response('Empty message content', { status: 400 });
+         // Skip insert when there is no text content — e.g. a message composed
+         // entirely of non-text parts.
+         if (!content) {
+            return new Response('Empty message content', { status: 400 });
+         }
+
+         // Use the UIMessage's own stable id as the DB row id so that
+         // onConflictDoNothing fires correctly on client retries.
+         const msgId =
+            typeof lastMessage.id === 'string' && lastMessage.id.length > 0
+               ? lastMessage.id
+               : (() => {
+                  // SDK should always assign a stable id; warn if missing.
+                  return crypto.randomUUID();
+               })();
+
+         await createMessage({
+            id: msgId,
+            chatId,
+            role: ROLE_USER,
+            content,
+         });
       }
-
-      // Use the UIMessage's own stable id as the DB row id so that
-      // onConflictDoNothing fires correctly on client retries.
-      const msgId =
-         typeof lastMessage.id === 'string' && lastMessage.id.length > 0
-            ? lastMessage.id
-            : (() => {
-               // SDK should always assign a stable id; warn if missing so any
-               console.warn('[chat] lastMessage.id missing — falling back to randomUUID(); retries may duplicate this message');
-               return crypto.randomUUID();
-            })();
-
-      await createMessage({
-         id: msgId,
-         chatId,
-         role: ROLE_USER,
-         content,
-      });
    }
 
    // ── STEP 2: Build canonical history from DB ────────────────────────────────
+   // On refresh, exclude the anchor and everything after it so history ends
+   // with the last user message.
    const dbMsgs = await getMessages(chatId);
+   const anchorIdx = isRefresh ? dbMsgs.findIndex((m) => m.id === deleteFromId) : -1;
    const historyMessages: UIMessage[] = dbMsgs
-      .filter((m): m is typeof m & { role: typeof ROLE_USER | typeof ROLE_ASSISTANT } =>
-         (m.role === ROLE_USER || m.role === ROLE_ASSISTANT) && !m.content.startsWith(ERROR_SENTINEL_PREFIX),
-      )
+      .filter((m, i): m is typeof m & { role: typeof ROLE_USER | typeof ROLE_ASSISTANT } => {
+         if (m.role !== ROLE_USER && m.role !== ROLE_ASSISTANT) return false;
+         if (m.content.startsWith(ERROR_SENTINEL_PREFIX)) return false;
+         if (anchorIdx !== -1 && i >= anchorIdx) return false;
+         return true;
+      })
       .map((m) => ({
          id: m.id,
          role: m.role,
@@ -131,17 +139,34 @@ export async function POST(req: Request) {
             console.error('[chat] CRITICAL: Failed to persist error message:', { chatId, error: persistErr });
          }
       },
-      onFinish: async ({ text }) => {
-         // ── STEP 5: Persist assistant response after stream completes ───────────
-         // onFinish fires exactly once. MUST be wrapped in try/catch — the HTTP
+   });
+
+   // ── STEP 5: Return streaming response ─────────────────────────────────────
+   return result.toUIMessageStreamResponse({
+      onFinish: async ({ responseMessage }) => {
+         // Persist the assistant reply. MUST be wrapped in try/catch — the HTTP
          // response is already sent (200 OK), so errors here cannot reach the client.
+         const text = responseMessage.parts
+            .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+            .map((p) => p.text)
+            .join('');
          try {
-            await createMessage({
-               id: crypto.randomUUID(),
-               chatId,
-               role: ROLE_ASSISTANT,
-               content: text,
-            });
+            if (isRefresh) {
+               // Atomically swap: delete old message(s) from anchor onward, insert new one.
+               await replaceMessagesFrom(chatId, deleteFromId as string, {
+                  id: responseMessage.id,
+                  chatId,
+                  role: ROLE_ASSISTANT,
+                  content: text,
+               });
+            } else {
+               await createMessage({
+                  id: responseMessage.id,
+                  chatId,
+                  role: ROLE_ASSISTANT,
+                  content: text,
+               });
+            }
             // Touch updatedAt so the sidebar re-sorts this chat to the top.
             await updateChat(chatId, {});
          } catch (err) {
@@ -151,12 +176,7 @@ export async function POST(req: Request) {
                textLength: text.length,
                error: err,
             });
-            // Skip title trigger — the assistant message was not persisted.
-            return;
          }
       },
    });
-
-   // ── STEP 6: Return streaming response ──────────────────────────────────────────
-   return result.toUIMessageStreamResponse();
 }
