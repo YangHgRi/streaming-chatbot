@@ -423,7 +423,6 @@ export function MessageList({
       bottomRef.current?.scrollIntoView({ behavior });
    }, []);
 
-   // Track if user is near bottom
    const handleScroll = useCallback(() => {
       if (rafRef.current !== null) return;
       rafRef.current = requestAnimationFrame(() => {

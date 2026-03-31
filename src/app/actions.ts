@@ -19,7 +19,6 @@ export async function createChatAction() {
    redirect(`/chat/${chatId}`);
 }
 
-// Rename a conversation.
 export async function renameChatAction(chatId: string, formData: FormData) {
    // FormData.get() returns string | File | null; typeof guard narrows to string safely.
    const raw = formData.get('title');
@@ -34,7 +33,6 @@ export async function renameChatAction(chatId: string, formData: FormData) {
    revalidatePath('/', 'layout');
 }
 
-// Delete a conversation and all its messages.
 // deleteChat uses CASCADE on the FK — child message rows are removed automatically.
 export async function deleteChatAction(chatId: string) {
    let nextChatId: string | undefined;
@@ -77,7 +75,6 @@ export async function searchChatsAction(query: string): Promise<Chat[]> {
    return searchChats(query);
 }
 
-// Update the system prompt for a conversation.
 export async function updateSystemPromptAction(chatId: string, systemPrompt: string): Promise<void> {
    try {
       await updateChat(chatId, { systemPrompt: (systemPrompt.trim() || null) as string | null });

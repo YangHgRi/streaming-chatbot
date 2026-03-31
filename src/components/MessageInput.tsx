@@ -30,7 +30,6 @@ export function MessageInput({
       if (!input.trim() || isLoading) return;
       onSend(input.trim());
       setInput('');
-      // Reset height after clearing the input
       if (textareaRef.current) {
          textareaRef.current.style.height = 'auto';
       }
