@@ -460,6 +460,18 @@ export function MessageList({
    const isWaitingPhase =
       isLoading && (messages.length === 0 || messages.at(-1)?.role === 'user');
 
+   // Delay switching from standalone DotPulse to bubble by 500 ms so the user
+   // never sees an empty white block flash before the first token arrives.
+   const [showBubble, setShowBubble] = useState(false);
+   useEffect(() => {
+      if (isWaitingPhase) {
+         setShowBubble(false);
+         return;
+      }
+      const t = setTimeout(() => setShowBubble(true), 500);
+      return () => clearTimeout(t);
+   }, [isWaitingPhase]);
+
    const showEmptyState = messages.length === 0 && !isLoading;
 
    return (
@@ -473,6 +485,11 @@ export function MessageList({
 
          {messages.map((message) => {
             const isUser = message.role === 'user';
+            // During the 500 ms delay after submission, suppress the empty
+            // assistant bubble so the standalone DotPulse keeps showing.
+            if (!isUser && !showBubble && isLoading && message.id === lastMessageId) {
+               return null;
+            }
             const isError = (message.metadata as Record<string, unknown>)?.isError;
             // Hide action buttons on the actively streaming message
             const isLastAndStreaming = isLoading && message.id === lastMessageId;
@@ -585,7 +602,7 @@ export function MessageList({
          })}
 
          {/* Thinking phase indicator (submitted → no assistant message yet) */}
-         {isWaitingPhase && <DotPulse />}
+         {(isWaitingPhase || (isLoading && !showBubble)) && <DotPulse />}
 
          {/* Error bubble */}
          {error && !isLoading && (
