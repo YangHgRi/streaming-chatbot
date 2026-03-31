@@ -6,6 +6,7 @@ import { createChatAction, updateSystemPromptAction, generateShareLinkAction } f
 import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
 import { ShareButton } from '@/components/ShareButton';
 import { SystemPromptButton } from '@/components/SystemPromptButton';
+import { ExportDropdown } from '@/components/ExportDropdown';
 import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 export default async function ChatPage({
@@ -55,25 +56,7 @@ export default async function ChatPage({
             {/* Action buttons: Share + Export */}
             <div className="ml-auto flex items-center gap-1">
                <ShareButton chatId={chatId} onShare={generateShareLinkAction} />
-               {/* Export dropdown — zero-JS <details>/<summary> pattern */}
-               <details className="relative">
-                  <summary className="list-none cursor-pointer p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center gap-1 text-xs font-medium">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                     </svg>
-                     <span className="hidden sm:inline">Export</span>
-                  </summary>
-                  <div className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
-                     <a href={`/api/chat/${chatId}/export?format=markdown`} download className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <span>📄</span> Markdown (.md)
-                     </a>
-                     <a href={`/api/chat/${chatId}/export?format=json`} download className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <span>📋</span> JSON
-                     </a>
-                  </div>
-               </details>
+               <ExportDropdown chatId={chatId} />
                <SystemPromptButton
                   chatId={chatId}
                   initialPrompt={chat.systemPrompt ?? ''}
