@@ -7,3 +7,8 @@ export const DEFAULT_CHAT_TITLE = 'New Chat';
 // fails. Lets the chat page distinguish error rows from normal responses and
 // expose the error text via metadata instead of rendering the raw prefix.
 export const ERROR_SENTINEL_PREFIX = '__ERROR__:';
+
+// Message role literals — use these instead of raw strings throughout the app.
+export const ROLE_USER = 'user' as const;
+export const ROLE_ASSISTANT = 'assistant' as const;
+export const ROLE_SYSTEM = 'system' as const;

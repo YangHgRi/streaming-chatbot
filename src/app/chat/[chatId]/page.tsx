@@ -6,7 +6,7 @@ import { createChatAction, updateSystemPromptAction, generateShareLinkAction } f
 import { MobileSidebarToggle } from '@/components/MobileSidebarToggle';
 import { ShareButton } from '@/components/ShareButton';
 import { SystemPromptButton } from '@/components/SystemPromptButton';
-import { ERROR_SENTINEL_PREFIX } from '@/constants';
+import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 export default async function ChatPage({
    params,
@@ -28,8 +28,8 @@ export default async function ChatPage({
    const initialMessages: UIMessage[] = dbMessages
       // Filter out 'system' role rows before casting — schema allows the 'system'
       // value but the cast below only accepts 'user' | 'assistant'.
-      .filter((msg): msg is typeof msg & { role: 'user' | 'assistant' } =>
-         msg.role === 'user' || msg.role === 'assistant',
+      .filter((msg): msg is typeof msg & { role: typeof ROLE_USER | typeof ROLE_ASSISTANT } =>
+         msg.role === ROLE_USER || msg.role === ROLE_ASSISTANT,
       )
       .map((msg) => {
          // Detect persisted error sentinel and expose it via metadata.

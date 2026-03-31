@@ -9,6 +9,7 @@ import { deleteMessagesFromAction } from '@/app/actions';
 import { getTextContent } from '@/lib/getTextContent';
 import { SystemPromptModal } from './SystemPromptModal';
 import { useSidebar } from './SidebarProvider';
+import { ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -74,7 +75,7 @@ export function ChatInterface({
       const prev = prevStatusRef.current;
       prevStatusRef.current = status;
       if (!titled && (prev === 'streaming' || prev === 'submitted') && status === 'ready') {
-         const firstUserMsg = messages.find((m) => m.role === 'user');
+         const firstUserMsg = messages.find((m) => m.role === ROLE_USER);
          const firstUserMessage = firstUserMsg ? getTextContent(firstUserMsg).trim() : '';
          fetch(`/api/chat/${chatId}/title`, {
             method: 'POST',
@@ -206,29 +207,29 @@ export function ChatInterface({
             const messagesBeforeThis = messages.slice(0, idx);
             // R2: keep the first user message visible rather than flashing blank
             const optimisticMessages =
-               idx === 0 && msg.role === 'user' ? [msg] : messagesBeforeThis;
+               idx === 0 && msg.role === ROLE_USER ? [msg] : messagesBeforeThis;
 
             const promptMsg =
-               msg.role === 'user'
+               msg.role === ROLE_USER
                   ? msg
-                  : [...messagesBeforeThis].reverse().find((m) => m.role === 'user');
+                  : [...messagesBeforeThis].reverse().find((m) => m.role === ROLE_USER);
             if (!promptMsg) return;
 
             const promptText = getTextContent(promptMsg);
             if (!promptText) return;
 
             // Record old assistant response for version history
-            if (msg.role === 'assistant') {
+            if (msg.role === ROLE_ASSISTANT) {
                const currentText = getTextContent(msg);
                setPastVersions(prev => ({
                   ...prev,
                   [promptMsg.id]: [currentText, ...(prev[promptMsg.id] ?? [])],
                }));
-            } else if (msg.role === 'user') {
+            } else if (msg.role === ROLE_USER) {
                // Refreshing from user message — find the assistant after it
                const assistantIdx = idx + 1;
                const assistantMsg = messages[assistantIdx];
-               if (assistantMsg && assistantMsg.role === 'assistant') {
+               if (assistantMsg && assistantMsg.role === ROLE_ASSISTANT) {
                   const currentText = getTextContent(assistantMsg);
                   setPastVersions(prev => ({
                      ...prev,

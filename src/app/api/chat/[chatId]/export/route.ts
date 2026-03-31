@@ -16,7 +16,7 @@ function contentDisposition(title: string, ext: string): string {
 }
 
 import { getChat, getMessages } from '@/lib/db/queries';
-import { ERROR_SENTINEL_PREFIX } from '@/constants';
+import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,8 +35,8 @@ export async function GET(
 
    const visibleMessages = messages.filter(
       (m) =>
-         m.role === 'user' ||
-         (m.role === 'assistant' && !m.content.startsWith(ERROR_SENTINEL_PREFIX)),
+         m.role === ROLE_USER ||
+         (m.role === ROLE_ASSISTANT && !m.content.startsWith(ERROR_SENTINEL_PREFIX)),
    );
 
    if (format === 'json') {
@@ -66,7 +66,7 @@ export async function GET(
       '',
    ];
    for (const msg of visibleMessages) {
-      lines.push(msg.role === 'user' ? '**You:**' : '**Assistant:**');
+      lines.push(msg.role === ROLE_USER ? '**You:**' : '**Assistant:**');
       lines.push(msg.content, '');
    }
    const markdown = lines.join('\n');

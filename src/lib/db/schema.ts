@@ -1,5 +1,5 @@
 import { pgTable, text, boolean, timestamp, index } from 'drizzle-orm/pg-core';
-import { DEFAULT_CHAT_TITLE } from '@/constants';
+import { DEFAULT_CHAT_TITLE, ROLE_USER, ROLE_ASSISTANT, ROLE_SYSTEM } from '@/constants';
 
 export const chats = pgTable('chats', {
    id: text('id').primaryKey(),
@@ -19,7 +19,7 @@ export const messages = pgTable(
       chatId: text('chat_id')
          .notNull()
          .references(() => chats.id, { onDelete: 'cascade' }),
-      role: text('role', { enum: ['user', 'assistant', 'system'] }).notNull(),
+      role: text('role', { enum: [ROLE_USER, ROLE_ASSISTANT, ROLE_SYSTEM] }).notNull(),
       content: text('content').notNull(),
       createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
    },

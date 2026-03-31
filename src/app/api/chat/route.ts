@@ -1,7 +1,7 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createMessage, updateChat, getChat } from '@/lib/db/queries';
-import { ERROR_SENTINEL_PREFIX } from '@/constants';
+import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 // Validate OPENAI_API_KEY at module load for a clear error in dev
 // instead of a cryptic 401 / SDK exception on the first request.
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
    // ── STEP 1: Persist user message BEFORE calling LLM ──────────────────────────
    // User message is saved exactly once, outside the retry loop.
    const lastMessage = messages.at(-1) as Record<string, unknown>;
-   if (lastMessage.role === 'user') {
+   if (lastMessage.role === ROLE_USER) {
       // Use explicit type guard instead of inline cast
       const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
       const content = parts
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       await createMessage({
          id: msgId,
          chatId,
-         role: 'user',
+         role: ROLE_USER,
          content,
       });
    }
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
             await createMessage({
                id: crypto.randomUUID(),
                chatId,
-               role: 'assistant',
+               role: ROLE_ASSISTANT,
                content: `${ERROR_SENTINEL_PREFIX}${msg}`,
             });
             // Touch updatedAt so the sidebar re-sorts this chat to the top.
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
             await createMessage({
                id: crypto.randomUUID(),
                chatId,
-               role: 'assistant',
+               role: ROLE_ASSISTANT,
                content: text,
             });
             // Touch updatedAt so the sidebar re-sorts this chat to the top.

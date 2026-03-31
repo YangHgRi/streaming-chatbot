@@ -6,6 +6,7 @@ import type { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { getTextContent } from '@/lib/getTextContent';
 import { CodeBlock } from './CodeBlock';
+import { ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 // js-hoist-regexp: compile once at module level, not inside render.
 const MD_LANG_RE = /language-\w+/;
@@ -457,7 +458,7 @@ export function MessageList({
 
    // True when request is sent but no assistant reply exists yet
    const isWaitingPhase =
-      isLoading && (messages.length === 0 || messages.at(-1)?.role === 'user');
+      isLoading && (messages.length === 0 || messages.at(-1)?.role === ROLE_USER);
 
    // Delay switching from standalone DotPulse to bubble by 500 ms so the user
    // never sees an empty white block flash before the first token arrives.
@@ -483,7 +484,7 @@ export function MessageList({
          {showEmptyState && <EmptyState onSend={onSend} />}
 
          {messages.map((message) => {
-            const isUser = message.role === 'user';
+            const isUser = message.role === ROLE_USER;
             // During the 500 ms delay after submission, suppress the empty
             // assistant bubble so the standalone DotPulse keeps showing.
             if (!isUser && !showBubble && isLoading && message.id === lastMessageId) {
@@ -497,7 +498,7 @@ export function MessageList({
             // Version navigation for assistant messages
             const msgIndex = messages.findIndex(m => m.id === message.id);
             const userMsgBefore = !isUser && msgIndex > 0
-               ? [...messages.slice(0, msgIndex)].reverse().find(m => m.role === 'user')
+               ? [...messages.slice(0, msgIndex)].reverse().find(m => m.role === ROLE_USER)
                : undefined;
             const pastVers = (userMsgBefore && pastVersions) ? (pastVersions[userMsgBefore.id] ?? []) : [];
             const totalVers = pastVers.length + 1;
@@ -532,11 +533,11 @@ export function MessageList({
                               onSave={(newText) => { onEdit(message, newText); setEditingId(null); }}
                               onCancel={() => setEditingId(null)}
                            />
-                        ) : message.role === 'assistant' && isError ? (
+                        ) : message.role === ROLE_ASSISTANT && isError ? (
                            <span className="text-sm">Something went wrong. Please try again.</span>
-                        ) : message.role === 'assistant' && isLastAndStreaming && !displayText ? (
+                        ) : message.role === ROLE_ASSISTANT && isLastAndStreaming && !displayText ? (
                            <DotPulse inline />
-                        ) : message.role === 'assistant' ? (
+                        ) : message.role === ROLE_ASSISTANT ? (
                            <div className="prose prose-sm dark:prose-invert max-w-none">
                               <ReactMarkdown
                                  remarkPlugins={REMARK_PLUGINS}
