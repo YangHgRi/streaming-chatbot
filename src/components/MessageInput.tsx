@@ -44,14 +44,14 @@ export function MessageInput({
    }
 
    return (
-      <form onSubmit={handleSubmit} className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 flex gap-2 items-center">
+      <form onSubmit={handleSubmit} className="h-12 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 flex gap-2 items-center flex-shrink-0">
          {/* New Chat button — left of textarea */}
          <button
             type="button"
             disabled={isCreating}
             onClick={() => startCreateTransition(onNewChat)}
             title="New chat"
-            className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
+            className="p-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
          >
             <MessageSquarePlus size={20} />
          </button>
@@ -77,7 +77,7 @@ export function MessageInput({
             }}
             disabled={isLoading}
             placeholder="Type a message… (Shift+Enter for new line)"
-            className="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 p-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
+            className="flex-1 resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400 py-1.5 px-3 text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-hidden"
             rows={1}
             style={{ maxHeight: '200px' }}
          />
@@ -87,7 +87,7 @@ export function MessageInput({
                type="button"
                onClick={onStop}
                title="Stop generation"
-               className="px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 flex items-center gap-1.5 transition-colors"
+               className="px-4 py-1.5 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 flex-shrink-0 flex items-center gap-1.5 transition-colors"
             >
                {/* Square stop icon */}
                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -99,7 +99,7 @@ export function MessageInput({
             <button
                type="submit"
                disabled={isLoading}
-               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 flex-shrink-0"
+               className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 flex-shrink-0"
             >
                Send
             </button>
