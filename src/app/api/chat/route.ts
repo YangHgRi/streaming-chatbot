@@ -1,6 +1,6 @@
 import { streamText, convertToModelMessages, type UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createMessage, updateChat, getChat } from '@/lib/db/queries';
+import { createMessage, updateChat, getChat, getMessages } from '@/lib/db/queries';
 import { ERROR_SENTINEL_PREFIX, ROLE_USER, ROLE_ASSISTANT } from '@/constants';
 
 // Validate OPENAI_API_KEY at module load for a clear error in dev
@@ -93,10 +93,26 @@ export async function POST(req: Request) {
       });
    }
 
-   // ── STEP 2: Convert UIMessage[] to ModelMessage[] (required for AI SDK v6) ──
-   const modelMessages = await convertToModelMessages(messages as UIMessage[]);
+   // ── STEP 2: Build canonical history from DB ────────────────────────────────
+   // Use DB as source of truth instead of the client-provided messages array.
+   // This prevents stale useChat closures or incomplete streaming state from
+   // corrupting the conversation context sent to the LLM.
+   const dbMsgs = await getMessages(chatId);
+   const historyMessages: UIMessage[] = dbMsgs
+      .filter((m): m is typeof m & { role: typeof ROLE_USER | typeof ROLE_ASSISTANT } =>
+         (m.role === ROLE_USER || m.role === ROLE_ASSISTANT) && !m.content.startsWith(ERROR_SENTINEL_PREFIX),
+      )
+      .map((m) => ({
+         id: m.id,
+         role: m.role,
+         parts: [{ type: 'text' as const, text: m.content }],
+         metadata: {},
+      }));
 
-   // ── STEP 3: Stream with built-in retry ─────────────────────────────────────
+   // ── STEP 3: Convert UIMessage[] to ModelMessage[] (required for AI SDK v6) ──
+   const modelMessages = await convertToModelMessages(historyMessages);
+
+   // ── STEP 4: Stream with built-in retry ───────────────────────────────────
    const result = streamText({
       model: openai(MODEL_NAME),
       messages: modelMessages,
@@ -119,7 +135,7 @@ export async function POST(req: Request) {
          }
       },
       onFinish: async ({ text }) => {
-         // ── STEP 4: Persist assistant response after stream completes ───────────
+         // ── STEP 5: Persist assistant response after stream completes ───────────
          // onFinish fires exactly once. MUST be wrapped in try/catch — the HTTP
          // response is already sent (200 OK), so errors here cannot reach the client.
          try {
@@ -144,6 +160,6 @@ export async function POST(req: Request) {
       },
    });
 
-   // ── STEP 5: Return streaming response ────────────────────────────────────────
+   // ── STEP 6: Return streaming response ──────────────────────────────────────────
    return result.toUIMessageStreamResponse();
 }
