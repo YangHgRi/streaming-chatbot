@@ -191,7 +191,7 @@ export function SidebarClient({
             className={[
                // Mobile: fixed overlay, slides in/out
                'fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0',
-               'bg-gray-900 text-white flex flex-col',
+               'bg-gray-900 text-white flex flex-col border-r border-gray-700',
                'transition-transform duration-200 ease-in-out',
                isOpen ? 'translate-x-0' : '-translate-x-full',
                // Desktop: in-flow, always visible
