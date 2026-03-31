@@ -60,7 +60,7 @@ export function ChatInterface({
    systemPrompt: string;
    onUpdateSystemPrompt: (prompt: string) => Promise<void>;
 }) {
-   const { messages, sendMessage, setMessages, status, error, stop } = useChat({
+   const { messages, sendMessage, setMessages, regenerate, status, error, stop } = useChat({
       id: chatId,
       messages: initialMessages,
    });
@@ -195,7 +195,8 @@ export function ChatInterface({
 
    // ─── Message action handlers ───────────────────────────────────────────────
 
-   // REFRESH: show confirm popover; on confirm — truncate history + re-send prompt.
+   // REFRESH: only for AI messages — keep everything before it, delete it and
+   // everything after it from DB, then call reload() (no new user message appended).
    const handleRefresh = useCallback((msg: UIMessage) => {
       handleCancel(); // dismiss any other pending action
       requestConfirm(
@@ -204,53 +205,35 @@ export function ChatInterface({
             const idx = messages.findIndex((m) => m.id === msg.id);
             if (idx === -1) return;
 
+            // Keep all messages strictly before the target AI message.
             const messagesBeforeThis = messages.slice(0, idx);
-            // R2: keep the first user message visible rather than flashing blank
-            const optimisticMessages =
-               idx === 0 && msg.role === ROLE_USER ? [msg] : messagesBeforeThis;
 
-            const promptMsg =
-               msg.role === ROLE_USER
-                  ? msg
-                  : [...messagesBeforeThis].reverse().find((m) => m.role === ROLE_USER);
-            if (!promptMsg) return;
-
-            const promptText = getTextContent(promptMsg);
-            if (!promptText) return;
-
-            // Record old assistant response for version history
-            if (msg.role === ROLE_ASSISTANT) {
-               const currentText = getTextContent(msg);
+            // Record old assistant response for version history.
+            const currentText = getTextContent(msg);
+            const promptMsg = [...messagesBeforeThis].reverse().find((m) => m.role === ROLE_USER);
+            if (promptMsg) {
                setPastVersions(prev => ({
                   ...prev,
                   [promptMsg.id]: [currentText, ...(prev[promptMsg.id] ?? [])],
                }));
-            } else if (msg.role === ROLE_USER) {
-               // Refreshing from user message — find the assistant after it
-               const assistantIdx = idx + 1;
-               const assistantMsg = messages[assistantIdx];
-               if (assistantMsg && assistantMsg.role === ROLE_ASSISTANT) {
-                  const currentText = getTextContent(assistantMsg);
-                  setPastVersions(prev => ({
-                     ...prev,
-                     [msg.id]: [currentText, ...(prev[msg.id] ?? [])],
-                  }));
-               }
             }
 
             const snapshot = messages;
-            setMessages(optimisticMessages);
+            // Optimistically update UI: show only messages before the target.
+            setMessages(messagesBeforeThis);
 
+            // Delete target AI message and everything after it from DB.
             deleteMessagesFromAction(chatId, msg.id).catch((err) => {
                console.error('[chat] deleteMessagesFromAction failed:', err);
                setMessages(snapshot);
                showToast('Action failed. Please try again.', 'error');
             });
 
-            sendMessage({ text: promptText });
+            // Re-generate the AI response without appending a new user message.
+            regenerate();
          },
       );
-   }, [messages, chatId, setMessages, sendMessage, showToast, requestConfirm, handleCancel]);
+   }, [messages, chatId, setMessages, regenerate, showToast, requestConfirm, handleCancel]);
 
    // COPY: immediate, no confirm needed.
    const handleCopy = useCallback(async (msg: UIMessage) => {

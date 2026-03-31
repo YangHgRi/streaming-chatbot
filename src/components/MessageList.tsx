@@ -187,13 +187,15 @@ function MessageActions({
                   <IconEdit />
                </ActionButton>
             )}
-            <ActionButton
-               label="Regenerate"
-               onClick={() => onRefresh(message)}
-               className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
-            >
-               <IconRefresh />
-            </ActionButton>
+            {!isUser && (
+               <ActionButton
+                  label="Regenerate"
+                  onClick={() => onRefresh(message)}
+                  className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+               >
+                  <IconRefresh />
+               </ActionButton>
+            )}
             <ActionButton
                label="Copy"
                onClick={() => onCopy(message)}
