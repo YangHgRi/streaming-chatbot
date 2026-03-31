@@ -97,13 +97,19 @@ function IconChevronUp({ size = 12 }: { size?: number }) {
 // ─── DotPulse ────────────────────────────────────────────────────────────────
 // Simple three-dot loading animation shown while waiting for the first token.
 
-function DotPulse() {
+function DotPulse({ inline = false }: { inline?: boolean }) {
+   const dots = (
+      <div className="flex items-center gap-1.5 py-0.5">
+         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0s_infinite]" />
+         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0.4s_infinite]" />
+         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0.8s_infinite]" />
+      </div>
+   );
+   if (inline) return dots;
    return (
       <div className="mb-2 flex items-start">
-         <div className="rounded-lg px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0s_infinite]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0.4s_infinite]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 animate-[dot-pulse_1.2s_ease-in-out_0.8s_infinite]" />
+         <div className="rounded-lg px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            {dots}
          </div>
       </div>
    );
@@ -512,6 +518,8 @@ export function MessageList({
                            />
                         ) : message.role === 'assistant' && isError ? (
                            <span className="text-sm">Something went wrong. Please try again.</span>
+                        ) : message.role === 'assistant' && isLastAndStreaming && !displayText ? (
+                           <DotPulse inline />
                         ) : message.role === 'assistant' ? (
                            <div className="prose prose-sm dark:prose-invert max-w-none">
                               <ReactMarkdown
