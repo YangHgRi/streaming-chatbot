@@ -9,7 +9,7 @@
  * already on <html> and no re-injection is needed.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 // ─── Context ─────────────────────────────────────────────────────────────────
 
@@ -33,13 +33,10 @@ const THEME_SCRIPT = `(function(){try{var s=localStorage.getItem('theme');var d=
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-   const [theme, setThemeState] = useState<Theme>('light');
-
-   // Read actual DOM state after mount (avoids SSR mismatch)
-   useEffect(() => {
-      const isDark = document.documentElement.classList.contains('dark');
-      setThemeState(isDark ? 'dark' : 'light');
-   }, []);
+   const [theme, setThemeState] = useState<Theme>(() => {
+      if (typeof document === 'undefined') return 'light';
+      return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+   });
 
    function setTheme(next: Theme) {
       setThemeState(next);
