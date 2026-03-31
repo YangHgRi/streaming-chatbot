@@ -1,13 +1,18 @@
 'use client';
 import { useTheme } from '@wrksz/themes/client';
 import { Moon, Sun } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
+
+// useSyncExternalStore with a no-op subscribe and differing server/client snapshots
+// is the recommended way to detect client-side mount without useEffect + setState.
+const subscribe = () => () => { };
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function ThemeToggle() {
    const { resolvedTheme, setTheme } = useTheme();
-   // Avoid hydration mismatch: don't render icon until mounted on client
-   const [mounted, setMounted] = useState(false);
-   useEffect(() => setMounted(true), []);
+   // Avoid hydration mismatch: false on server, true on client after hydration
+   const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
    return (
       <button
