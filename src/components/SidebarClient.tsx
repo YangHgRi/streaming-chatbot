@@ -190,7 +190,7 @@ export function SidebarClient({
          <aside
             className={[
                // Mobile: fixed overlay, slides in/out
-               'fixed inset-y-0 left-0 z-40 w-64 flex-shrink-0',
+               'fixed inset-y-0 left-0 z-40 w-64 shrink-0',
                'bg-gray-900 text-white flex flex-col border-r border-gray-700',
                'transition-transform duration-200 ease-in-out',
                isOpen ? 'translate-x-0' : '-translate-x-full',
@@ -292,7 +292,7 @@ export function SidebarClient({
                               {!isEditing && (
                                  <div
                                     className={[
-                                       'items-center gap-1 pr-2 flex-shrink-0',
+                                       'items-center gap-1 pr-2 shrink-0',
                                        isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
                                     ].join(' ')}
                                  >
@@ -391,7 +391,7 @@ export function SidebarClient({
                                              {!isEditing && (
                                                 <div
                                                    className={[
-                                                      'items-center gap-1 pr-2 flex-shrink-0',
+                                                      'items-center gap-1 pr-2 shrink-0',
                                                       isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
                                                    ].join(' ')}
                                                 >
@@ -484,7 +484,7 @@ export function SidebarClient({
                                              {!isEditing && (
                                                 <div
                                                    className={[
-                                                      'items-center gap-1 pr-2 flex-shrink-0',
+                                                      'items-center gap-1 pr-2 shrink-0',
                                                       isConfirming || isActive ? 'flex' : 'hidden group-hover:flex',
                                                    ].join(' ')}
                                                 >
@@ -553,7 +553,7 @@ export function SidebarClient({
                />
             </div>
             {/* Footer: theme toggle */}
-            <div className="py-[22px] px-4 border-t border-gray-700 flex items-center justify-between flex-shrink-0">
+            <div className="py-[22px] px-4 border-t border-gray-700 flex items-center justify-between shrink-0">
                <span className="text-sm text-gray-400">Theme</span>
                <ThemeToggle />
             </div>

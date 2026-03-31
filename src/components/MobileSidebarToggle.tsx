@@ -11,7 +11,7 @@ export function MobileSidebarToggle() {
          onClick={toggle}
          aria-label="Toggle sidebar"
          aria-expanded={isOpen}
-         className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors md:hidden flex-shrink-0"
+         className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors md:hidden shrink-0"
       >
          <Menu size={20} />
       </button>

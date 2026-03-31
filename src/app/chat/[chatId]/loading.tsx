@@ -2,7 +2,7 @@ export default function ChatLoading() {
    return (
       <div className="flex flex-col h-full bg-gray-50 animate-pulse">
          {/* Header skeleton */}
-         <div className="border-b border-gray-200 bg-white px-4 py-4 flex-shrink-0 flex items-center gap-3">
+         <div className="border-b border-gray-200 bg-white px-4 py-4 shrink-0 flex items-center gap-3">
             {/* Mobile toggle placeholder */}
             <div className="w-8 h-8 rounded-lg bg-gray-200 md:hidden" />
             <div className="h-5 w-48 rounded bg-gray-200" />
