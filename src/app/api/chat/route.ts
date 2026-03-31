@@ -36,7 +36,6 @@ export async function POST(req: Request) {
    const { id: chatId, messages, deleteFromId } = body;
    const isRefresh = typeof deleteFromId === 'string' && deleteFromId.length > 0;
 
-   // Validate chatId — required to associate messages with a conversation
    if (!chatId || typeof chatId !== 'string') {
       return new Response('Missing or invalid chatId', { status: 400 });
    }
@@ -58,11 +57,9 @@ export async function POST(req: Request) {
    if (!isRefresh) {
       const lastMessage = messages.at(-1) as Record<string, unknown>;
       if (lastMessage.role === ROLE_USER) {
-         // Use explicit type guard instead of inline cast to validate parts.
          const parts = Array.isArray(lastMessage.parts) ? lastMessage.parts : [];
          const content = parts
             .filter((p): p is { type: 'text'; text: string } => {
-               // Verify both type === 'text' and that text is a string.
                if (typeof p !== 'object' || p === null) return false;
                const r = p as Record<string, unknown>;
                return r.type === 'text' && typeof r.text === 'string';
@@ -81,10 +78,7 @@ export async function POST(req: Request) {
          const msgId =
             typeof lastMessage.id === 'string' && lastMessage.id.length > 0
                ? lastMessage.id
-               : (() => {
-                  // SDK should always assign a stable id; warn if missing.
-                  return crypto.randomUUID();
-               })();
+               : crypto.randomUUID();
 
          await createMessage({
             id: msgId,
@@ -114,7 +108,7 @@ export async function POST(req: Request) {
          metadata: {},
       }));
 
-   // ── STEP 3: Convert UIMessage[] to ModelMessage[] (required for AI SDK v6) ──
+   // ── STEP 3: Convert to model messages ────────────────────────────────────
    const modelMessages = await convertToModelMessages(historyMessages);
 
    // ── STEP 4: Stream with built-in retry ───────────────────────────────────
@@ -143,6 +137,7 @@ export async function POST(req: Request) {
 
    // ── STEP 5: Return streaming response ─────────────────────────────────────
    return result.toUIMessageStreamResponse({
+      generateMessageId: () => crypto.randomUUID(),
       onFinish: async ({ responseMessage }) => {
          // Persist the assistant reply. MUST be wrapped in try/catch — the HTTP
          // response is already sent (200 OK), so errors here cannot reach the client.
