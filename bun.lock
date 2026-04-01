@@ -9,6 +9,7 @@
         "@ai-sdk/react": "3.0.139",
         "@tailwindcss/typography": "^0.5.19",
         "@types/react-syntax-highlighter": "^15.5.13",
+        "@wrksz/themes": "^0.7.9",
         "ai": "6.0.137",
         "drizzle-orm": "0.45.1",
         "lucide-react": "^1.6.0",
@@ -392,6 +393,8 @@
     "@unrs/resolver-binding-win32-x64-msvc": ["@unrs/resolver-binding-win32-x64-msvc@1.11.1", "", { "os": "win32", "cpu": "x64" }, "sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g=="],
 
     "@vercel/oidc": ["@vercel/oidc@3.1.0", "", {}, "sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w=="],
+
+    "@wrksz/themes": ["@wrksz/themes@0.7.9", "", { "peerDependencies": { "next": ">=16.0.0", "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0", "typescript": ">=4.5.0" }, "optionalPeers": ["next"] }, "sha512-o4/I7JIxKnTmzrnbmNv4o/RG3q4CnX/0m4fG3iRbMGnPamR4ntdzx1qH35XUFmD74NrbEXpEbvIG+BaKvJ2tOA=="],
 
     "acorn": ["acorn@8.16.0", "", { "bin": "bin/acorn" }, "sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw=="],
 
