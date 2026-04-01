@@ -85,7 +85,7 @@ export function ChatInterface({
       }
    }, [status, router, chatId, messages, titled]);
 
-   const isLoading = status === 'submitted' || status === 'streaming';
+   const isLoading = status === 'submitted';
 
    const [showSystemPrompt, setShowSystemPrompt] = useState(false);
 
